@@ -1,0 +1,1236 @@
+<div class="page">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo-container">
+        <img src="assets/branding/logopalmas.webp" alt="Grupo Palmas" />
+      </div>
+
+      <small>Gestión de Transporte</small>
+    </div>
+
+    <nav>
+      <button type="button" class="nav-item" (click)="volverDashboard()">Resumen</button>
+
+      <button type="button" class="nav-item active">Solicitudes</button>
+    </nav>
+
+    <button type="button" class="logout" (click)="cerrarSesion()">Cerrar sesión</button>
+  </aside>
+
+  <main class="content">
+    <header class="page-header">
+      <div>
+        <p>Operaciones de transporte</p>
+        <h1>Solicitudes de transporte</h1>
+        <span> Registra, evalúa y programa las necesidades de transporte. </span>
+      </div>
+
+      @if (puedeEditar()) {
+        <button type="button" class="primary-button" (click)="abrirFormulario()">
+          + Nueva solicitud
+        </button>
+      }
+    </header>
+
+    @if (mensajeExito()) {
+      <div class="message success">
+        {{ mensajeExito() }}
+      </div>
+    }
+
+    @if (mensajeError()) {
+      <div class="message error">
+        {{ mensajeError() }}
+      </div>
+    }
+
+    <section class="summary">
+      <article class="summary-card">
+        <small>Pendientes de evaluación</small>
+        <strong>{{ totalPendientes() }}</strong>
+      </article>
+
+      <article class="summary-card approved">
+        <small>Aprobadas sin programar</small>
+        <strong>{{ totalAprobadas() }}</strong>
+      </article>
+
+      <article class="summary-card programmed">
+        <small>Servicios programados</small>
+        <strong>{{ totalProgramadas() }}</strong>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <p>Control operativo</p>
+          <h2>Solicitudes registradas</h2>
+        </div>
+
+        <div class="filters">
+          <label for="estado">Estado</label>
+
+          <select id="estado" [value]="filtroEstado()" (change)="cambiarFiltro($event)">
+            <option value="TODOS">Todos</option>
+            <option value="SOLICITADA">Solicitadas</option>
+            <option value="EN_REVISION">En revisión</option>
+            <option value="APROBADA">Aprobadas</option>
+            <option value="PROGRAMADA">Programadas</option>
+            <option value="RECHAZADA">Rechazadas</option>
+            <option value="EN_CURSO">En curso</option>
+            <option value="COMPLETADA">Completadas</option>
+            <option value="CANCELADA">Canceladas</option>
+          </select>
+        </div>
+      </div>
+
+      @if (cargando()) {
+        <div class="loading">
+          <span class="loader"></span>
+          <p>Cargando solicitudes...</p>
+        </div>
+      } @else if (solicitudesFiltradas().length === 0) {
+        <div class="empty-state">
+          <h3>No existen solicitudes</h3>
+          <p>No hay registros que coincidan con el filtro seleccionado.</p>
+        </div>
+      } @else {
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Solicitante</th>
+                <th>Tipo</th>
+                <th>Origen / destino</th>
+                <th>Producto</th>
+                <th>Fecha requerida</th>
+                <th>Prioridad</th>
+                <th>Estado</th>
+                <th>Servicio</th>
+                <th>Consulta</th>
+                @if (puedeEditar()) {
+                  <th>Acciones</th>
+                }
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (solicitud of solicitudesFiltradas(); track solicitud.id) {
+                <tr>
+                  <td>
+                    <strong>{{ solicitud.codigo }}</strong>
+                    <small>
+                      {{ solicitud.usuarioSolicitanteCorreo }}
+                    </small>
+                  </td>
+
+                  <td>
+                    {{ solicitud.solicitanteNombre }}
+                    <small>
+                      {{ solicitud.areaSolicitante }}
+                    </small>
+                  </td>
+
+                  <td>
+                    {{ nombreTipo(solicitud.tipoSolicitud) }}
+                  </td>
+
+                  <td>
+                    <strong>{{ solicitud.origen }}</strong>
+                    <small> → {{ solicitud.destino }} </small>
+                  </td>
+
+                  <td>
+                    {{ nombreProducto(solicitud.productoTransportado) }}
+
+                    @if (solicitud.cantidadEstimadaToneladas !== null) {
+                      <small>
+                        {{ solicitud.cantidadEstimadaToneladas }}
+                        toneladas
+                      </small>
+                    }
+                  </td>
+
+                  <td>
+                    {{ solicitud.fechaRequerida.replace('T', ' ').slice(0, 16) }}
+                  </td>
+
+                  <td>
+                    <span
+                      class="priority"
+                      [class.high]="solicitud.prioridad === 'ALTA'"
+                      [class.urgent]="solicitud.prioridad === 'URGENTE'"
+                    >
+                      {{ solicitud.prioridad }}
+                    </span>
+                  </td>
+
+                  <td>
+                    <span
+                      class="status"
+                      [class.requested]="solicitud.estado === 'SOLICITADA'"
+                      [class.review]="solicitud.estado === 'EN_REVISION'"
+                      [class.approved]="solicitud.estado === 'APROBADA'"
+                      [class.programmed]="solicitud.estado === 'PROGRAMADA'"
+                      [class.in-progress]="solicitud.estado === 'EN_CURSO'"
+                      [class.completed]="solicitud.estado === 'COMPLETADA'"
+                      [class.rejected]="solicitud.estado === 'RECHAZADA'"
+                      [class.cancelled]="solicitud.estado === 'CANCELADA'"
+                    >
+                      {{ nombreEstado(solicitud.estado) }}
+                    </span>
+
+                    @if (solicitud.motivoRechazoCancelacion) {
+                      <small class="reason">
+                        {{ solicitud.motivoRechazoCancelacion }}
+                      </small>
+                    }
+                  </td>
+
+                  <td>
+                    @if (solicitud.servicioCodigo) {
+                      <strong>
+                        {{ solicitud.servicioCodigo }}
+                      </strong>
+                    } @else {
+                      <span class="without-service"> Sin asignar </span>
+                    }
+                  </td>
+
+                  <td>
+                    <button
+                      type="button"
+                      class="small-button view-button"
+                      (click)="visualizarSolicitud(solicitud)"
+                    >
+                      Visualizar
+                    </button>
+                  </td>
+                  @if (puedeEditar()) {
+                    <td>
+                      <div class="actions">
+                        @if (
+                          !solicitud.planViaje &&
+                          !solicitud.servicioId &&
+                          ['SOLICITADA', 'EN_REVISION', 'APROBADA'].includes(solicitud.estado)
+                        ) {
+                          <button
+                            type="button"
+                            class="small-button"
+                            (click)="abrirRecorridoAnterior(solicitud)"
+                          >
+                            Completar recorrido
+                          </button>
+                        }
+                        @if (solicitud.estado === 'SOLICITADA') {
+                          <button
+                            type="button"
+                            class="small-button review-button"
+                            [disabled]="procesandoId() !== null"
+                            (click)="pasarARevision(solicitud)"
+                          >
+                            Revisar
+                          </button>
+
+                          <button
+                            type="button"
+                            class="small-button cancel-button"
+                            [disabled]="procesandoId() !== null"
+                            (click)="cancelar(solicitud)"
+                          >
+                            Cancelar
+                          </button>
+                        }
+
+                        @if (solicitud.estado === 'EN_REVISION') {
+                          <button
+                            type="button"
+                            class="small-button approve-button"
+                            [disabled]="procesandoId() !== null"
+                            (click)="aprobar(solicitud)"
+                          >
+                            Aprobar
+                          </button>
+
+                          <button
+                            type="button"
+                            class="small-button reject-button"
+                            [disabled]="procesandoId() !== null"
+                            (click)="rechazar(solicitud)"
+                          >
+                            Rechazar
+                          </button>
+
+                          <button
+                            type="button"
+                            class="small-button cancel-button"
+                            [disabled]="procesandoId() !== null"
+                            (click)="cancelar(solicitud)"
+                          >
+                            Cancelar
+                          </button>
+                        }
+
+                        @if (solicitud.estado === 'APROBADA') {
+                          <button
+                            type="button"
+                            class="small-button schedule-button"
+                            [disabled]="procesandoId() !== null"
+                            (click)="abrirProgramacion(solicitud)"
+                          >
+                            Programar
+                          </button>
+
+                          <button
+                            type="button"
+                            class="small-button cancel-button"
+                            [disabled]="procesandoId() !== null"
+                            (click)="cancelar(solicitud)"
+                          >
+                            Cancelar
+                          </button>
+                        }
+
+                        @if (
+                          solicitud.estado === 'PROGRAMADA' ||
+                          solicitud.estado === 'EN_CURSO' ||
+                          solicitud.estado === 'COMPLETADA' ||
+                          solicitud.estado === 'RECHAZADA' ||
+                          solicitud.estado === 'CANCELADA'
+                        ) {
+                          <span class="no-actions">—</span>
+                        }
+                      </div>
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  </main>
+</div>
+
+@if (mostrarFormulario()) {
+  <div class="modal-backdrop">
+    <section class="modal request-modal" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div>
+          <p>Necesidad operativa</p>
+          <h2>Nueva solicitud</h2>
+        </div>
+
+        <button type="button" class="close-button" (click)="cerrarFormulario()">×</button>
+      </header>
+
+      <form [formGroup]="formularioSolicitud" (ngSubmit)="guardarSolicitud()">
+        <div class="form-grid">
+          <h3 class="full-width request-section-title">Datos de la solicitud</h3>
+          <label>
+            Tipo de solicitud
+            <select formControlName="tipoSolicitud" (change)="ajustarCargaPorTipo()">
+              <option value="RECOJO_RFF">Recojo de RFF</option>
+              <option value="RECOJO_FS">Recojo de fruto suelto</option>
+              <option value="MOVIMIENTO_INTERNO">Movimiento interno</option>
+              <option value="DISPOSICION_SUBPRODUCTO">Disposición de subproducto</option>
+              <option value="OTRO">Otro</option>
+            </select>
+          </label>
+
+          <label>
+            Prioridad
+            <select formControlName="prioridad">
+              <option value="BAJA">Baja</option>
+              <option value="NORMAL">Normal</option>
+              <option value="ALTA">Alta</option>
+              <option value="URGENTE">Urgente</option>
+            </select>
+          </label>
+
+          <label>
+            Nombre del solicitante
+            <input type="text" formControlName="solicitanteNombre" placeholder="Nombre completo" />
+          </label>
+
+          <label>
+            Área solicitante
+            <input
+              type="text"
+              formControlName="areaSolicitante"
+              placeholder="Ej. Operaciones Agrícolas"
+            />
+          </label>
+
+          <label>
+            Teléfono (opcional)
+            <input type="text" formControlName="telefono" placeholder="Número de contacto" />
+          </label>
+
+          <app-fecha-hora-futura formControlName="fechaRequerida" titulo="Fecha y hora requerida" />
+
+          <section class="full-width request-route" aria-label="Recorrido solicitado">
+            <h3 class="full-width request-section-title">Recorrido solicitado</h3>
+            <label class="full-width">
+              Ruta solicitada
+              <select formControlName="rutaId" (change)="seleccionarRutaSolicitud()">
+                <option [ngValue]="null">Selecciona una ruta del catálogo</option>
+                @for (ruta of rutas(); track ruta.id) {
+                  <option [ngValue]="ruta.id">
+                    {{ ruta.codigo }} · {{ ruta.origen }} → {{ ruta.destino }}
+                  </option>
+                }
+              </select>
+            </label>
+            <div class="full-width route-tools">
+              <small
+                >El origen y regreso se toman de la ruta elegida. Para un punto intermedio, usa
+                «Agregar parada» en el recorrido del viaje.</small
+              >
+            </div>
+          </section>
+          <h3 class="full-width request-section-title">Carga y observaciones</h3>
+          @if (cargaAutomatica()) {
+            <p id="carga-automatica-ayuda" class="full-width field-help">
+              La carga se selecciona automáticamente según el tipo de recojo.
+            </p>
+          }
+
+          <label>
+            Producto o subproducto
+            <select
+              formControlName="productoTransportado"
+              [attr.aria-describedby]="cargaAutomatica() ? 'carga-automatica-ayuda' : null"
+            >
+              <option value="RFF">RFF — Racimo de Fruto Fresco</option>
+              <option value="FS">FS — Fruto Fresco</option>
+              <option value="ESCOBAJO">Escobajo</option>
+              <option value="FIBRA">Fibra</option>
+              <option value="TORTA_CLARIFICACION">Torta de clarificación</option>
+              <option value="LODO_BIOGAS">Lodo de biogás</option>
+              <option value="CENIZA">Ceniza</option>
+              <option value="RESIDUOS_VARIOS">Residuos varios</option>
+            </select>
+          </label>
+
+          <label>
+            Cantidad estimada en toneladas (opcional)
+            <input
+              type="number"
+              min="0.01"
+              step="0.01"
+              formControlName="cantidadEstimadaToneladas"
+              placeholder="Ej. 12.50"
+              inputmode="decimal"
+              aria-describedby="cantidad-ayuda"
+            />
+            <small id="cantidad-ayuda" class="request-hint"
+              >Puedes dejarla vacía si aún no conoces la cantidad.</small
+            >
+          </label>
+
+          @if (formularioSolicitud.controls.productoTransportado.value === 'RESIDUOS_VARIOS') {
+            <label class="full-width">
+              Descripción de residuos
+              <textarea
+                rows="3"
+                formControlName="descripcionProducto"
+                placeholder="Describe los residuos"
+              ></textarea>
+            </label>
+          }
+
+          @if (formularioSolicitud.controls.rutaId.value) {
+            <app-itinerario-viaje
+              [rutas]="rutas()"
+              [ubicaciones]="ubicaciones()"
+              [rutaInicialId]="formularioSolicitud.controls.rutaId.value"
+              [productoInicial]="formularioSolicitud.controls.productoTransportado.value || 'RFF'"
+              (cambio)="itinerarioSolicitud.set($event)"
+            />
+          }
+          <label class="full-width">
+            Observaciones (opcional)
+            <textarea
+              rows="3"
+              formControlName="observaciones"
+              placeholder="Información adicional"
+            ></textarea>
+          </label>
+        </div>
+
+        @if (mensajeFormulario()) {
+          <div class="form-message">
+            {{ mensajeFormulario() }}
+          </div>
+        }
+
+        <footer class="modal-actions">
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="guardando() || !itinerarioSolicitud()"
+            (click)="cerrarFormulario()"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="submit"
+            class="primary-button"
+            [disabled]="guardando() || !itinerarioSolicitud()"
+          >
+            @if (guardando()) {
+              Registrando...
+            } @else {
+              Registrar solicitud
+            }
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
+
+@if (mostrarProgramacion() && solicitudSeleccionada(); as solicitud) {
+  <div class="modal-backdrop">
+    <section
+      class="modal scheduling-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Programar servicio"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="modal-header">
+        <div>
+          <p>{{ solicitud.codigo }}</p>
+          <h2>Programar servicio</h2>
+          <p class="scheduling-subtitle">
+            Revisa la solicitud y asigna la salida, la unidad y el conductor.
+          </p>
+        </div>
+
+        <button type="button" class="close-button" (click)="cerrarProgramacion()">×</button>
+      </header>
+
+      <h3 class="scheduling-section-title">Solicitud aprobada</h3>
+      <div class="request-reference">
+        <div>
+          <small>Solicitante</small>
+          <strong>
+            {{ solicitud.solicitanteNombre }}
+          </strong>
+        </div>
+
+        <div>
+          <small>Operación</small>
+          <strong>
+            {{ nombreTipo(solicitud.tipoSolicitud) }}
+          </strong>
+        </div>
+
+        <div>
+          <small>Trayecto solicitado</small>
+          <strong>
+            {{ solicitud.origen }}
+            → {{ solicitud.destino }}
+          </strong>
+        </div>
+
+        <div>
+          <small>Producto</small>
+          <strong>
+            {{ nombreProducto(solicitud.productoTransportado) }}
+          </strong>
+        </div>
+      </div>
+
+      @if (cargandoOpciones()) {
+        <div class="loading compact">
+          <span class="loader"></span>
+          <p>Cargando recursos disponibles...</p>
+        </div>
+      } @else {
+        <form [formGroup]="formularioProgramacion" (ngSubmit)="programarSolicitud()">
+          <h3 class="scheduling-section-title">Asignación del viaje</h3>
+          <div class="form-grid">
+            <label>
+              Código del servicio
+              <input
+                type="text"
+                formControlName="codigoServicio"
+                readonly
+                aria-describedby="codigo-servicio-ayuda"
+              />
+
+              <small id="codigo-servicio-ayuda" class="field-help">
+                Generado automáticamente desde la solicitud.
+              </small>
+            </label>
+
+            <app-fecha-hora-futura
+              formControlName="fechaHoraSalida"
+              [minima]="solicitudSeleccionada()?.fechaRequerida"
+              titulo="Fecha y hora de salida"
+            />
+
+            <label>
+              Camión disponible
+              <select formControlName="vehiculoId">
+                @if (!cargandoOpciones() && camiones().length === 0) {
+                  <small class="availability-error">
+                    No existen camiones disponibles sin servicios activos.
+                  </small>
+                }
+
+                <option [ngValue]="null">Selecciona un camión</option>
+
+                @for (camion of camiones(); track camion.id) {
+                  <option [ngValue]="camion.id">
+                    {{ camion.placa }}
+                    — {{ camion.marca }}
+                    {{ camion.modelo }}
+                  </option>
+                }
+              </select>
+            </label>
+
+            <label>
+              Chofer
+              <select formControlName="conductorId">
+                @if (!cargandoOpciones() && choferes().length === 0) {
+                  <small class="availability-error">
+                    No existen choferes disponibles sin servicios activos.
+                  </small>
+                }
+                <option [ngValue]="null">Selecciona un chofer</option>
+
+                @for (chofer of choferes(); track chofer.id) {
+                  <option [ngValue]="chofer.id">
+                    {{ chofer.nombres }}
+                    {{ chofer.apellidos }}
+                  </option>
+                }
+              </select>
+            </label>
+
+            <app-resumen-solicitud-viaje [solicitud]="solicitud" />
+            <p class="full-width field-help">
+              Este recorrido se definió y aprobó en la solicitud. Aquí solo se asignan la fecha, el
+              vehículo y el chofer.
+            </p>
+            <label class="full-width">
+              Observaciones de programación
+              <textarea
+                rows="3"
+                formControlName="observaciones"
+                placeholder="Información para el chofer"
+              ></textarea>
+            </label>
+          </div>
+
+          @if (mensajeFormulario()) {
+            <div class="form-message">
+              {{ mensajeFormulario() }}
+            </div>
+          }
+
+          <footer class="modal-actions">
+            <button
+              type="button"
+              class="secondary-button"
+              [disabled]="guardando()"
+              (click)="cerrarProgramacion()"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="submit"
+              class="primary-button"
+              [disabled]="
+                guardando() ||
+                cargandoOpciones() ||
+                camiones().length === 0 ||
+                choferes().length === 0 ||
+                rutas().length === 0 ||
+                !itinerario()
+              "
+            >
+              @if (guardando()) {
+                Programando...
+              } @else {
+                Asignar viaje planificado
+              }
+            </button>
+          </footer>
+        </form>
+      }
+    </section>
+  </div>
+}
+
+@if (mostrarMotivo() && solicitudMotivo(); as solicitud) {
+  <div class="modal-backdrop reason-backdrop">
+    <section class="reason-modal" role="dialog" aria-modal="true" aria-labelledby="titulo-motivo">
+      <header class="reason-header">
+        <div class="reason-symbol" aria-hidden="true">!</div>
+
+        <div>
+          <p>{{ solicitud.codigo }}</p>
+          <h2 id="titulo-motivo">
+            {{ accionMotivo() === 'CANCELAR' ? 'Cancelar solicitud' : 'Rechazar solicitud' }}
+          </h2>
+        </div>
+
+        <button
+          type="button"
+          class="close-button"
+          aria-label="Cerrar ventana"
+          [disabled]="procesandoId() !== null"
+          (click)="cerrarMotivo()"
+        >
+          ×
+        </button>
+      </header>
+
+      <div class="reason-reference">
+        <span>Solicitante</span>
+        <strong>{{ solicitud.solicitanteNombre }}</strong>
+        <small> {{ solicitud.origen }} → {{ solicitud.destino }} </small>
+      </div>
+
+      <form [formGroup]="formularioMotivo" (ngSubmit)="confirmarMotivo()">
+        <label class="reason-field">
+          <span>
+            Motivo
+            {{ accionMotivo() === 'CANCELAR' ? 'de la cancelación' : 'del rechazo' }}
+          </span>
+
+          <textarea
+            rows="5"
+            maxlength="500"
+            formControlName="motivo"
+            placeholder="Describe de forma clara el motivo de esta decisión"
+            autofocus
+          ></textarea>
+
+          <small> Este comentario quedará registrado en la solicitud. </small>
+        </label>
+
+        @if (mensajeMotivo()) {
+          <div class="reason-message" role="alert">
+            {{ mensajeMotivo() }}
+          </div>
+        }
+
+        <div class="reason-warning">
+          Esta acción cambiará el estado de la solicitud y quedará registrada en el sistema.
+        </div>
+
+        <footer class="reason-actions">
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="procesandoId() !== null"
+            (click)="cerrarMotivo()"
+          >
+            No, volver
+          </button>
+
+          <button type="submit" class="reason-confirm-button" [disabled]="procesandoId() !== null">
+            @if (procesandoId() !== null) {
+              Procesando...
+            } @else {
+              {{ accionMotivo() === 'CANCELAR' ? 'Confirmar cancelación' : 'Confirmar rechazo' }}
+            }
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
+
+@if (solicitudSinRecorrido(); as anterior) {
+  <div class="modal-backdrop">
+    <section
+      class="modal request-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-recorrido-anterior"
+    >
+      <header class="modal-header">
+        <div>
+          <p>Solicitud {{ anterior.codigo }}</p>
+          <h2 id="titulo-recorrido-anterior">Completar recorrido</h2>
+        </div>
+        <button
+          type="button"
+          class="close-button"
+          [disabled]="guardando()"
+          (click)="solicitudSinRecorrido.set(null)"
+          aria-label="Cerrar"
+        >
+          ×
+        </button>
+      </header>
+      <p>
+        Esta solicitud anterior necesita un recorrido completo. Al guardarlo quedará en revisión
+        para su aprobación.
+      </p>
+      <label class="legacy-route"
+        >Ruta predefinida<select
+          [value]="rutaAnteriorId() || ''"
+          (change)="rutaAnteriorId.set(+$any($event.target).value); itinerarioSolicitud.set(null)"
+        >
+          <option value="">Selecciona una ruta</option>
+          @for (r of rutas(); track r.id) {
+            <option [value]="r.id">{{ r.codigo }} · {{ r.origen }} → {{ r.destino }}</option>
+          }
+        </select></label
+      >
+      @if (rutaAnteriorId()) {
+        <app-itinerario-viaje
+          [rutas]="rutas()"
+          [ubicaciones]="ubicaciones()"
+          [rutaInicialId]="rutaAnteriorId()"
+          [productoInicial]="anterior.productoTransportado"
+          (cambio)="itinerarioSolicitud.set($event)"
+        />
+      }
+      @if (mensajeFormulario()) {
+        <p class="message error" role="alert">{{ mensajeFormulario() }}</p>
+      }
+      <footer class="modal-actions">
+        <button
+          type="button"
+          class="secondary-button"
+          [disabled]="guardando()"
+          (click)="solicitudSinRecorrido.set(null)"
+        >
+          Cancelar</button
+        ><button
+          type="button"
+          class="primary-button"
+          [disabled]="guardando() || !itinerarioSolicitud()"
+          (click)="guardarRecorridoAnterior()"
+        >
+          Guardar y enviar a revisión
+        </button>
+      </footer>
+    </section>
+  </div>
+}
+
+@if (solicitudRevision(); as revision) {
+  <div class="modal-backdrop review-backdrop" (keydown.escape)="cerrarRevision()">
+    <section
+      class="modal review-modal"
+      [class.approval-modal]="aprobandoSolicitud()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="revision-titulo"
+      [attr.aria-busy]="procesandoId() !== null"
+    >
+      <header class="modal-header review-heading">
+        <div>
+          <p>
+            {{ aprobandoSolicitud() ? 'Etapa 2 · Autorización' : 'Etapa 1 · Evaluación' }} ·
+            {{ revision.codigo }}
+          </p>
+          <h2 id="revision-titulo">
+            {{ aprobandoSolicitud() ? 'Aprobar solicitud' : 'Revisar solicitud' }}
+          </h2>
+          <span class="review-subtitle">{{
+            aprobandoSolicitud()
+              ? 'Confirma la autorización del viaje para habilitar la asignación de vehículo y chofer.'
+              : 'Consulta los datos, la carga y las paradas. Iniciar la revisión todavía no autoriza el viaje.'
+          }}</span>
+        </div>
+        <button
+          id="revision-cerrar"
+          type="button"
+          class="close-button"
+          aria-label="Cerrar revisión"
+          [disabled]="procesandoId() !== null"
+          (click)="cerrarRevision()"
+        >
+          ×
+        </button>
+      </header>
+      <div class="review-badges">
+        <span class="status">{{ nombreEstado(revision.estado) }}</span
+        ><span
+          class="priority"
+          [class.high]="revision.prioridad === 'ALTA'"
+          [class.urgent]="revision.prioridad === 'URGENTE'"
+          >Prioridad {{ revision.prioridad }}</span
+        ><span>{{ nombreTipo(revision.tipoSolicitud) }}</span>
+      </div>
+      @if (aprobandoSolicitud()) {
+        <div class="approval-banner">
+          <div>
+            <strong>Confirmación de autorización</strong>
+            <p>
+              Al aprobar, el recorrido quedará autorizado y la solicitud estará disponible para
+              programar el servicio.
+            </p>
+          </div>
+        </div>
+        <dl class="approval-facts">
+          <div>
+            <dt>Solicitante</dt>
+            <dd>{{ revision.solicitanteNombre }}</dd>
+          </div>
+          <div>
+            <dt>Fecha requerida</dt>
+            <dd>{{ revision.fechaRequerida.replace('T', ' ').slice(0, 16) }}</dd>
+          </div>
+          <div>
+            <dt>Carga</dt>
+            <dd>{{ nombreProducto(revision.productoTransportado) }}</dd>
+          </div>
+        </dl>
+        <app-resumen-solicitud-viaje [solicitud]="revision" />
+        <div class="approval-detail">
+          <button
+            type="button"
+            class="secondary-button approval-data-button"
+            [attr.aria-expanded]="mostrarDatosAprobacion()"
+            aria-controls="datos-aprobacion"
+            (click)="mostrarDatosAprobacion.set(!mostrarDatosAprobacion())"
+          >
+            {{
+              mostrarDatosAprobacion()
+                ? 'Ocultar datos de la solicitud'
+                : 'Consultar todos los datos de la solicitud'
+            }}
+          </button>
+          @if (mostrarDatosAprobacion()) {
+            <div id="datos-aprobacion">
+              <section class="review-section" aria-labelledby="revision-solicitante">
+                <h3 id="revision-solicitante">Solicitante y fecha requerida</h3>
+                <dl class="review-grid">
+                  <div>
+                    <dt>Solicitante</dt>
+                    <dd>{{ revision.solicitanteNombre }}</dd>
+                  </div>
+                  <div>
+                    <dt>Área solicitante</dt>
+                    <dd>{{ revision.areaSolicitante }}</dd>
+                  </div>
+                  <div>
+                    <dt>Contacto</dt>
+                    <dd>{{ revision.telefono || 'Sin teléfono registrado' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Fecha y hora requerida</dt>
+                    <dd>{{ revision.fechaRequerida.replace('T', ' ').slice(0, 16) }}</dd>
+                  </div>
+                </dl>
+              </section>
+              <section class="review-section" aria-labelledby="revision-carga">
+                <h3 id="revision-carga">Carga solicitada</h3>
+                <dl class="review-grid">
+                  <div>
+                    <dt>Producto o subproducto</dt>
+                    <dd>{{ nombreProducto(revision.productoTransportado) }}</dd>
+                  </div>
+                  <div>
+                    <dt>Cantidad estimada</dt>
+                    <dd>
+                      {{
+                        revision.cantidadEstimadaToneladas != null
+                          ? revision.cantidadEstimadaToneladas + ' toneladas'
+                          : 'No indicada'
+                      }}
+                    </dd>
+                  </div>
+                </dl>
+                @if (revision.descripcionProducto) {
+                  <p class="review-note">{{ revision.descripcionProducto }}</p>
+                }
+              </section>
+              <section class="review-section">
+                <h3>Ruta y paradas</h3>
+                <app-resumen-solicitud-viaje [solicitud]="revision" />
+              </section>
+              <section class="review-section">
+                <h3>Observaciones</h3>
+                <p class="review-note">
+                  {{ revision.observaciones || 'Sin observaciones adicionales.' }}
+                </p>
+              </section>
+            </div>
+          }
+        </div>
+      } @else {
+        <section class="review-section" aria-labelledby="revision-solicitante">
+          <h3 id="revision-solicitante">Solicitante y fecha requerida</h3>
+          <dl class="review-grid">
+            <div>
+              <dt>Solicitante</dt>
+              <dd>{{ revision.solicitanteNombre }}</dd>
+            </div>
+            <div>
+              <dt>Área solicitante</dt>
+              <dd>{{ revision.areaSolicitante }}</dd>
+            </div>
+            <div>
+              <dt>Contacto</dt>
+              <dd>{{ revision.telefono || 'Sin teléfono registrado' }}</dd>
+            </div>
+            <div>
+              <dt>Fecha y hora requerida</dt>
+              <dd>{{ revision.fechaRequerida.replace('T', ' ').slice(0, 16) }}</dd>
+            </div>
+          </dl>
+        </section>
+        <section class="review-section" aria-labelledby="revision-carga">
+          <h3 id="revision-carga">Carga solicitada</h3>
+          <dl class="review-grid">
+            <div>
+              <dt>Producto o subproducto</dt>
+              <dd>{{ nombreProducto(revision.productoTransportado) }}</dd>
+            </div>
+            <div>
+              <dt>Cantidad estimada</dt>
+              <dd>
+                {{
+                  revision.cantidadEstimadaToneladas != null
+                    ? revision.cantidadEstimadaToneladas + ' toneladas'
+                    : 'No indicada'
+                }}
+              </dd>
+            </div>
+          </dl>
+          @if (revision.descripcionProducto) {
+            <p class="review-note">{{ revision.descripcionProducto }}</p>
+          }
+        </section>
+        <section class="review-section">
+          <h3>Ruta y paradas</h3>
+          <app-resumen-solicitud-viaje [solicitud]="revision" />
+        </section>
+        <section class="review-section">
+          <h3>Observaciones</h3>
+          <p class="review-note">
+            {{ revision.observaciones || 'Sin observaciones adicionales.' }}
+          </p>
+        </section>
+      }
+      @if (!revision.planViaje) {
+        <div class="reason-warning">
+          Falta completar el recorrido de esta solicitud antes de aprobarla.
+        </div>
+      }
+      @if (errorRevision()) {
+        <div class="reason-message" role="alert">{{ errorRevision() }}</div>
+      }
+      <footer class="modal-actions review-actions">
+        <button
+          type="button"
+          class="secondary-button"
+          [disabled]="procesandoId() !== null"
+          (click)="cerrarRevision()"
+        >
+          {{ aprobandoSolicitud() ? 'Volver sin aprobar' : 'Volver al listado' }}
+        </button>
+        @if (!revision.planViaje) {
+          <button
+            type="button"
+            class="primary-button"
+            [disabled]="procesandoId() !== null"
+            (click)="completarDesdeRevision()"
+          >
+            Completar recorrido
+          </button>
+        }
+        @if (aprobandoSolicitud() && revision.estado === 'EN_REVISION') {
+          <button
+            type="button"
+            class="small-button reject-button"
+            [disabled]="procesandoId() !== null"
+            (click)="rechazarRevision()"
+          >
+            Rechazar solicitud
+          </button>
+        }
+        @if (
+          (!aprobandoSolicitud() && revision.estado === 'SOLICITADA') ||
+          (aprobandoSolicitud() && revision.estado === 'EN_REVISION' && revision.planViaje)
+        ) {
+          <button
+            type="button"
+            class="primary-button"
+            [disabled]="procesandoId() !== null"
+            (click)="confirmarRevision()"
+          >
+            {{
+              procesandoId() !== null
+                ? 'Procesando...'
+                : aprobandoSolicitud()
+                  ? 'Confirmar aprobación'
+                  : 'Iniciar revisión'
+            }}
+          </button>
+        }
+      </footer>
+    </section>
+  </div>
+}
+
+@if (solicitudConsulta(); as consulta) {
+  <div class="modal-backdrop review-backdrop" (keydown.escape)="cerrarConsulta()">
+    <section
+      class="modal review-modal consultation-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="consulta-titulo"
+      [attr.aria-busy]="cargandoConsulta()"
+    >
+      <header class="modal-header review-heading">
+        <div>
+          <p>Consulta de transporte · {{ consulta.codigo }}</p>
+          <h2 id="consulta-titulo">Detalle de la solicitud</h2>
+          <span class="review-subtitle"
+            >Consulta los datos y el último avance recibido del viaje.</span
+          >
+        </div>
+        <button
+          id="consulta-cerrar"
+          type="button"
+          class="close-button"
+          aria-label="Cerrar detalle"
+          (click)="cerrarConsulta()"
+        >
+          ×
+        </button>
+      </header>
+      <div class="consultation-status">
+        <div>
+          <small>Estado de la solicitud</small><strong>{{ nombreEstado(consulta.estado) }}</strong>
+        </div>
+        <div>
+          <small>Estado del viaje</small
+          ><strong>{{
+            cargandoConsulta()
+              ? 'Consultando...'
+              : viajeConsulta()
+                ? viajeConsulta()!.estado.replace('_', ' ')
+                : consulta.servicioId
+                  ? 'Avance no disponible'
+                  : consulta.estado === 'RECHAZADA' || consulta.estado === 'CANCELADA'
+                    ? 'Sin viaje asignado'
+                    : 'Pendiente de programación'
+          }}</strong>
+        </div>
+      </div>
+      @if (errorConsulta()) {
+        <div class="reason-message" role="alert">{{ errorConsulta() }}</div>
+      }
+      <div class="consultation-layout">
+        <aside class="consultation-info">
+          <section class="review-section">
+            <h3>Datos de la solicitud</h3>
+            <dl class="review-grid">
+              <div>
+                <dt>Solicitante</dt>
+                <dd>{{ consulta.solicitanteNombre }}</dd>
+              </div>
+              <div>
+                <dt>Área</dt>
+                <dd>{{ consulta.areaSolicitante }}</dd>
+              </div>
+              <div>
+                <dt>Contacto</dt>
+                <dd>{{ consulta.telefono || 'Sin teléfono registrado' }}</dd>
+              </div>
+              <div>
+                <dt>Fecha requerida</dt>
+                <dd>{{ consulta.fechaRequerida.replace('T', ' ').slice(0, 16) }}</dd>
+              </div>
+              <div>
+                <dt>Tipo y prioridad</dt>
+                <dd>{{ nombreTipo(consulta.tipoSolicitud) }} · {{ consulta.prioridad }}</dd>
+              </div>
+              <div>
+                <dt>Carga</dt>
+                <dd>
+                  {{ nombreProducto(consulta.productoTransportado) }} ·
+                  {{
+                    consulta.cantidadEstimadaToneladas != null
+                      ? consulta.cantidadEstimadaToneladas + ' toneladas'
+                      : 'Cantidad no indicada'
+                  }}
+                </dd>
+              </div>
+            </dl>
+            @if (consulta.descripcionProducto) {
+              <p class="review-note">{{ consulta.descripcionProducto }}</p>
+            }
+          </section>
+          <section class="review-section assigned-trip">
+            <h3>Observaciones</h3>
+            <p class="review-note">
+              {{ consulta.observaciones || 'Sin observaciones adicionales.' }}
+            </p>
+            @if (consulta.motivoRechazoCancelacion) {
+              <h3>Motivo de rechazo o cancelación</h3>
+              <p class="review-note">{{ consulta.motivoRechazoCancelacion }}</p>
+            }
+          </section>
+        </aside>
+        <div class="consultation-plan">
+          <app-resumen-solicitud-viaje [solicitud]="consulta" [viaje]="viajeConsulta()" />
+        </div>
+      </div>
+      @if (viajeConsulta(); as viaje) {
+        <section class="review-section assigned-trip">
+          <h3>Viaje asignado · {{ viaje.codigo }}</h3>
+          <dl class="review-grid">
+            <div>
+              <dt>Unidad</dt>
+              <dd>{{ viaje.vehiculo.placa }}</dd>
+            </div>
+            <div>
+              <dt>Chofer</dt>
+              <dd>{{ viaje.conductor.nombres }}</dd>
+            </div>
+            <div>
+              <dt>Salida planificada</dt>
+              <dd>
+                {{ viaje.fechaHoraSalida?.replace('T', ' ')?.slice(0, 16) || 'No registrada' }}
+              </dd>
+            </div>
+          </dl>
+          <app-avance-viaje [servicio]="viaje" />
+          @if (viaje.observaciones) {
+            <p class="review-note">{{ viaje.observaciones }}</p>
+          }
+        </section>
+      } @else if (cargandoConsulta()) {
+        <p class="review-note" role="status">Cargando la información más reciente...</p>
+      }
+      <footer class="modal-actions review-actions">
+        <button
+          type="button"
+          class="secondary-button"
+          [disabled]="cargandoConsulta()"
+          (click)="actualizarConsulta()"
+        >
+          {{ cargandoConsulta() ? 'Actualizando...' : 'Actualizar' }}</button
+        ><button type="button" class="primary-button" (click)="cerrarConsulta()">
+          Cerrar detalle
+        </button>
+      </footer>
+    </section>
+  </div>
+}
+
+@if (viajeAsignado(); as viaje) {
+  <app-confirmacion-viaje [datos]="viaje" (cerrar)="viajeAsignado.set(null)" />
+}

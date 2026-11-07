@@ -1,0 +1,757 @@
+<div class="page">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-logo-container">
+        <img src="assets/branding/logopalmas.webp" alt="Grupo Palmas" />
+      </span>
+
+      <div>
+        <strong>Grupo Palmas</strong>
+        <small>Gestión de Transporte</small>
+      </div>
+    </div>
+
+    <nav>
+      <button class="nav-item" (click)="volverDashboard()">Resumen</button>
+
+      <button class="nav-item active">Vehículos</button>
+
+      <button class="nav-item" (click)="irConductores()">Conductores</button>
+    </nav>
+
+    <button class="logout" (click)="cerrarSesion()">Cerrar sesión</button>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div>
+        <p>Administración de flota</p>
+        <h1>Vehículos</h1>
+        <span> Consulta y administra los vehículos registrados. </span>
+      </div>
+
+      <div class="vehicle-header-actions">
+        @if (puedeBaja()) {
+          <button type="button" class="secondary-button" (click)="abrirSeleccionBaja()">
+            Dar de baja una unidad
+          </button>
+        }
+        <button class="primary-button" (click)="abrirFormulario()">+ Nuevo vehículo</button>
+      </div>
+    </header>
+
+    @if (mensajeExito()) {
+      <div class="notification success">
+        {{ mensajeExito() }}
+      </div>
+    }
+
+    <section class="summary">
+      <article>
+        <small>Total registrados</small>
+        <strong>{{ vehiculos().length }}</strong>
+      </article>
+
+      <article>
+        <small>Disponibles</small>
+        <strong>
+          {{ vehiculos().filter((vehiculo) => vehiculo.estado === 'DISPONIBLE').length }}
+        </strong>
+      </article>
+    </section>
+
+    <div class="unit-filters">
+      <label for="filtro-situacion">Situación de la unidad</label
+      ><select
+        id="filtro-situacion"
+        [value]="filtroSituacion()"
+        (change)="filtroSituacion.set($any($event.target).value)"
+      >
+        <option value="TODOS">Todas las unidades</option>
+        <option value="OPERATIVOS">Operativos</option>
+        <option value="MANTENIMIENTO">En mantenimiento</option>
+        <option value="BAJA_DEFINITIVA">Fuera de servicio</option>
+        <option value="INACTIVO">Pendientes de clasificar</option>
+      </select>
+    </div>
+    <section class="table-panel">
+      @if (cargando()) {
+        <div class="state-message">
+          <div class="loader"></div>
+          <p>Cargando vehículos...</p>
+        </div>
+      } @else if (mensajeError() && !mostrarFormulario()) {
+        <div class="state-message error">
+          <p>{{ mensajeError() }}</p>
+
+          <button (click)="cargarVehiculos()">Volver a intentar</button>
+        </div>
+      } @else if (vehiculos().length === 0) {
+        <div class="state-message">
+          <h2>No existen vehículos registrados</h2>
+          <p>Registra el primer vehículo de la flota.</p>
+        </div>
+      } @else {
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Foto</th>
+                <th>Código</th>
+                <th>Placa</th>
+                <th>Vehículo</th>
+                <th>Tipo</th>
+                <th>Año</th>
+                <th>Capacidad</th>
+                <th>Estado</th>
+                <th>Registro</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (vehiculo of vehiculosFiltrados(); track vehiculo.id) {
+                <tr>
+                  <td>
+                    <app-foto-vehiculo
+                      [vehiculoId]="vehiculo.id"
+                      [tieneFoto]="vehiculo.tieneFoto"
+                      [placa]="vehiculo.placa"
+                      [compacta]="true"
+                    />
+                  </td>
+                  <td>
+                    <strong>{{ vehiculo.codigoInterno }}</strong>
+                  </td>
+
+                  <td>
+                    <span class="plate">
+                      {{ vehiculo.placa }}
+                    </span>
+                  </td>
+
+                  <td>{{ vehiculo.marca }} {{ vehiculo.modelo }}</td>
+
+                  <td>{{ vehiculo.tipo }}</td>
+
+                  <td>{{ vehiculo.anioFabricacion }}</td>
+
+                  <td>{{ vehiculo.capacidadPasajeros }} pasajeros</td>
+
+                  <td>
+                    <span
+                      class="status"
+                      [class.suspended]="vehiculo.estado === 'SUSPENDIDO'"
+                      [class.retired]="vehiculo.estado === 'BAJA_DEFINITIVA'"
+                      [class.disponible]="vehiculo.estado === 'DISPONIBLE'"
+                      [class.servicio]="vehiculo.estado === 'EN_SERVICIO'"
+                      [class.mantenimiento]="vehiculo.estado === 'MANTENIMIENTO'"
+                      [class.inactivo]="vehiculo.estado === 'INACTIVO'"
+                    >
+                      {{ nombreEstado(vehiculo.estado) }}
+                    </span>
+                  </td>
+
+                  <td>
+                    {{ vehiculo.fechaRegistro | date: 'dd/MM/yyyy' }}
+                  </td>
+
+                  <td>
+                    <div class="row-actions">
+                      <button
+                        class="action-button"
+                        [disabled]="vehiculo.estado === 'BAJA_DEFINITIVA'"
+                        (click)="editarVehiculo(vehiculo)"
+                      >
+                        Editar
+                      </button>
+
+                      <button
+                        type="button"
+                        class="action-button"
+                        (click)="abrirGestionUnidad(vehiculo)"
+                      >
+                        Ver historial
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  </main>
+</div>
+
+@if (mostrarFormulario()) {
+  <div class="modal-backdrop">
+    <section class="modal">
+      <header class="modal-header">
+        <div>
+          <p>Administración de flota</p>
+
+          <h2>
+            {{ vehiculoEditandoId() === null ? 'Registrar vehículo' : 'Editar vehículo' }}
+          </h2>
+        </div>
+
+        <button type="button" class="close-button" (click)="cerrarFormulario()">×</button>
+      </header>
+
+      <form [formGroup]="vehiculoForm" (ngSubmit)="guardarVehiculo()">
+        @if (borradorRestaurado()) {
+          <p class="draft-notice" role="status">
+            Recuperamos los datos que estabas completando. Revisa el formulario y vuelve a
+            seleccionar la foto si corresponde.
+          </p>
+        }
+        <div class="form-grid">
+          <div class="form-field code-info">
+            <label>Código interno</label>
+            <div class="automatic-code">
+              @if (vehiculoEditandoId() === null) {
+                Se generará automáticamente al registrar
+              } @else {
+                Código conservado automáticamente
+              }
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="placa">Placa</label>
+            <input id="placa" type="text" formControlName="placa" placeholder="UCA-123" />
+          </div>
+
+          <div class="form-field">
+            <label for="marca">Marca</label>
+            <input id="marca" type="text" formControlName="marca" placeholder="Toyota" />
+          </div>
+
+          <div class="form-field">
+            <label for="modelo">Modelo</label>
+            <input id="modelo" type="text" formControlName="modelo" placeholder="Hilux" />
+          </div>
+
+          <div class="form-field">
+            <label for="anioFabricacion"> Año de fabricación </label>
+            <input id="anioFabricacion" type="number" formControlName="anioFabricacion" />
+          </div>
+
+          <div class="form-field">
+            <label for="tipo">Tipo de vehículo</label>
+            <select id="tipo" formControlName="tipo">
+              <option value="AUTOMOVIL">Automóvil</option>
+              <option value="CAMIONETA">Camioneta</option>
+              <option value="MINIBUS">Minibús</option>
+              <option value="BUS">Bus</option>
+              <option value="CAMION">Camión</option>
+              <option value="MOTOCICLETA">Motocicleta</option>
+              <option value="OTRO">Otro</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="capacidadPasajeros"> Capacidad de pasajeros </label>
+            <input id="capacidadPasajeros" type="number" formControlName="capacidadPasajeros" />
+          </div>
+
+          <div class="form-field">
+            <label for="estado">Estado</label>
+            <select id="estado" formControlName="estado">
+              @if (
+                vehiculoEditandoId() === null ||
+                ![
+                  'MANTENIMIENTO',
+                  'EN_SERVICIO',
+                  'SUSPENDIDO',
+                  'BAJA_DEFINITIVA',
+                  'INACTIVO',
+                ].includes(estadoOriginal)
+              ) {
+                <option value="DISPONIBLE">Disponible</option>
+              }
+              @if (
+                vehiculoEditandoId() !== null &&
+                !['EN_SERVICIO', 'SUSPENDIDO', 'BAJA_DEFINITIVA', 'INACTIVO'].includes(
+                  estadoOriginal
+                )
+              ) {
+                <option value="MANTENIMIENTO">En mantenimiento</option>
+              }
+              @if (['SUSPENDIDO', 'BAJA_DEFINITIVA', 'INACTIVO'].includes(estadoOriginal)) {
+                <option [value]="estadoOriginal">{{ nombreEstado(estadoOriginal) }}</option>
+              }
+              @if (estadoOriginal === 'EN_SERVICIO') {
+                <option value="EN_SERVICIO">En operación</option>
+              }
+            </select>
+            @if (estadoOriginal === 'MANTENIMIENTO' && vehiculoEditandoId() !== null) {
+              <small class="state-help"
+                >La unidad vuelve a estar disponible al cerrar su mantenimiento.</small
+              >
+            }
+            @if (estadoOriginal === 'EN_SERVICIO' && vehiculoEditandoId() !== null) {
+              <small class="state-help"
+                >El estado se actualiza al finalizar o cancelar el viaje.</small
+              >
+            }
+          </div>
+
+          <section class="odometro-unidad">
+            <h3>Odómetro de la unidad</h3>
+            @if (vehiculoEditandoId() !== null) {
+              <p>
+                Última lectura válida:
+                {{ lecturaBaseEdicion != null ? lecturaBaseEdicion + ' km' : 'Sin registro' }} ·
+                {{ estadoBaseEdicion }}. No se modifica al editar los datos generales.
+              </p>
+              @if (puedeAjustarOdometro()) {
+                <label class="odo-check"
+                  ><input type="checkbox" formControlName="actualizarOdometro" /> Registrar lectura
+                  base, reparación o ajuste del odómetro</label
+                >
+              }
+            }
+            @if (vehiculoEditandoId() === null || vehiculoForm.controls.actualizarOdometro.value) {
+              <div class="form-field">
+                <label for="estado-odometro">Funcionamiento del odómetro</label
+                ><select id="estado-odometro" formControlName="estadoOdometro">
+                  <option value="OPERATIVO">Operativo</option>
+                  <option value="AVERIADO">Averiado: no hay lectura válida</option>
+                </select>
+              </div>
+              @if (vehiculoForm.controls.estadoOdometro.value === 'OPERATIVO') {
+                <div class="form-field">
+                  <label for="odometro-unidad">Lectura actual (km)</label
+                  ><input
+                    id="odometro-unidad"
+                    type="number"
+                    min="0"
+                    max="99999999.99"
+                    step="0.01"
+                    formControlName="odometroKm"
+                    placeholder="Lectura real del tablero"
+                  />
+                </div>
+              }
+              @if (
+                vehiculoEditandoId() !== null ||
+                vehiculoForm.controls.estadoOdometro.value === 'AVERIADO'
+              ) {
+                <div class="form-field">
+                  <label for="motivo-odometro">Motivo de avería, reparación o ajuste</label
+                  ><textarea
+                    id="motivo-odometro"
+                    rows="2"
+                    maxlength="300"
+                    formControlName="motivoOdometro"
+                    placeholder="Ej. Reemplazo del tablero; nueva numeración"
+                  ></textarea>
+                </div>
+              }
+              <small
+                >Las lecturas y ajustes se conservan en el historial. Un odómetro averiado permite
+                operar con kilómetros estimados por ruta.</small
+              >
+            }
+          </section>
+          @if (requiereMantenimiento()) {
+            <section
+              class="maintenance-entry"
+              [formGroup]="mantenimientoForm"
+              aria-labelledby="mantenimiento-unidad-titulo"
+            >
+              <h3 id="mantenimiento-unidad-titulo">Ingreso a mantenimiento</h3>
+              <p>
+                Al guardar, la unidad quedará en mantenimiento y su atención aparecerá en el módulo
+                Mantenimiento.
+              </p>
+              <div class="maintenance-fields">
+                <div class="form-field">
+                  <label for="mant-titulo">Qué se realizará</label
+                  ><input
+                    id="mant-titulo"
+                    formControlName="titulo"
+                    maxlength="150"
+                    placeholder="Ej. Cambio de aceite"
+                  />
+                </div>
+                <div class="form-field">
+                  <label for="mant-prioridad">Prioridad de atención</label
+                  ><select id="mant-prioridad" formControlName="prioridad">
+                    <option value="">Selecciona la prioridad</option>
+                    <option value="BAJA">Baja</option>
+                    <option value="MEDIA">Media</option>
+                    <option value="ALTA">Alta</option>
+                    <option value="CRITICA">Crítica</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label for="mant-tipo">Tipo de atención</label
+                  ><select id="mant-tipo" formControlName="tipoFalla">
+                    <option value="">Selecciona el tipo</option>
+                    <option value="MANTENIMIENTO_PREVENTIVO">Mantenimiento preventivo</option>
+                    <option value="MOTOR">Motor</option>
+                    <option value="TRANSMISION">Transmisión</option>
+                    <option value="FRENOS">Frenos</option>
+                    <option value="SUSPENSION">Suspensión</option>
+                    <option value="DIRECCION">Dirección</option>
+                    <option value="SISTEMA_ELECTRICO">Sistema eléctrico</option>
+                    <option value="NEUMATICOS">Neumáticos</option>
+                    <option value="CARROCERIA">Carrocería</option>
+                    <option value="AIRE_ACONDICIONADO">Aire acondicionado</option>
+                    <option value="DOCUMENTACION">Documentación</option>
+                    <option value="OTRO">Otro</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label for="mant-km">Odómetro (km, opcional)</label
+                  ><input
+                    id="mant-km"
+                    type="number"
+                    min="0"
+                    max="2147483647"
+                    step="1"
+                    formControlName="kilometrajeReporte"
+                    placeholder="Ej. 125800"
+                  />
+                </div>
+                <div class="form-field maintenance-description">
+                  <label for="mant-descripcion">Descripción de la atención</label
+                  ><textarea
+                    id="mant-descripcion"
+                    rows="3"
+                    maxlength="1500"
+                    formControlName="descripcion"
+                    placeholder="Describe la falla o el trabajo solicitado"
+                  ></textarea>
+                </div>
+              </div>
+            </section>
+          }
+
+          <div class="form-field photo-field">
+            <label for="fotoVehiculo"> Foto de la unidad <span>(opcional)</span> </label>
+
+            <div class="photo-selector">
+              <div class="photo-preview" [class.con-editor]="!!fotoOriginal()">
+                @if (fotoOriginal(); as original) {
+                  <app-ajustar-foto-vehiculo
+                    [archivo]="original"
+                    (ajustada)="fotoSeleccionada.set($event)"
+                    (procesando)="procesandoFoto.set($event)"
+                  />
+                } @else if (vehiculoEditandoId(); as vehiculoId) {
+                  <app-foto-vehiculo
+                    [vehiculoId]="vehiculoId"
+                    [tieneFoto]="true"
+                    placa="Vista previa"
+                  />
+                } @else {
+                  <div class="photo-empty">
+                    <strong>Agrega una foto de la unidad</strong>
+                    <p>Selecciona una imagen donde se vea el vehículo completo.</p>
+                  </div>
+                }
+              </div>
+
+              <div class="photo-controls">
+                <input
+                  id="fotoVehiculo"
+                  class="file-input"
+                  type="file"
+                  accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+                  (change)="seleccionarFoto($event)"
+                />
+
+                <label class="file-button" for="fotoVehiculo">
+                  {{ fotoSeleccionada() ? 'Cambiar foto' : 'Seleccionar foto' }}
+                </label>
+
+                @if (fotoSeleccionada()) {
+                  <button type="button" class="remove-photo" (click)="quitarFotoSeleccionada()">
+                    Quitar selección
+                  </button>
+                }
+
+                <small>JPG o PNG, máximo 5 MB.</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        @if (mensajeError()) {
+          <div class="form-message error">
+            {{ mensajeError() }}
+          </div>
+        }
+
+        <footer class="modal-actions">
+          <button type="button" class="secondary-button" (click)="cerrarFormulario()">
+            Cancelar
+          </button>
+
+          <button type="submit" class="primary-button" [disabled]="guardando() || procesandoFoto()">
+            {{
+              guardando()
+                ? 'Guardando...'
+                : vehiculoEditandoId() === null
+                  ? 'Registrar vehículo'
+                  : requiereMantenimiento()
+                    ? 'Guardar y enviar a mantenimiento'
+                    : 'Guardar cambios'
+            }}
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
+
+@if (unidadGestion(); as unidad) {
+  <div class="modal-backdrop situation-backdrop" (keydown.escape)="cerrarGestionUnidad()">
+    <section
+      class="modal situation-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="situacion-titulo"
+    >
+      <header class="modal-header">
+        <div>
+          <p>Registro y trazabilidad de la unidad</p>
+          <h2 id="situacion-titulo">{{ unidad.placa }} · {{ nombreEstado(unidad.estado) }}</h2>
+        </div>
+        <button
+          type="button"
+          class="close-button"
+          aria-label="Cerrar gestión"
+          [disabled]="guardandoSituacion()"
+          (click)="cerrarGestionUnidad()"
+        >
+          ×
+        </button>
+      </header>
+      @if (unidad.estado === 'INACTIVO') {
+        <p class="situation-notice">
+          Este registro antiguo está pendiente de clasificar. No se ha considerado automáticamente
+          como baja definitiva.
+        </p>
+      }
+      @if (unidad.estado === 'BAJA_DEFINITIVA') {
+        <p class="situation-notice">
+          Unidad retirada definitivamente. Se conserva su historial y no admite reactivación ni
+          nuevas asignaciones.
+        </p>
+      }
+      @if (bajaDesdeProceso() && puedeBaja() && unidad.estado !== 'BAJA_DEFINITIVA') {
+        <form [formGroup]="situacionForm" (ngSubmit)="registrarSituacionUnidad()">
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="situacion-fecha">Fecha efectiva</label
+              ><input
+                id="situacion-fecha"
+                type="date"
+                [max]="hoySituacion"
+                formControlName="fechaEfectiva"
+              />
+            </div>
+            <div class="form-field situation-wide">
+              <label for="situacion-motivo">Motivo</label
+              ><textarea
+                id="situacion-motivo"
+                rows="3"
+                maxlength="1000"
+                formControlName="motivo"
+              ></textarea>
+            </div>
+            <div class="form-field situation-wide">
+              <label for="situacion-observaciones">Observaciones (opcional)</label
+              ><textarea
+                id="situacion-observaciones"
+                rows="2"
+                maxlength="2000"
+                formControlName="observaciones"
+              ></textarea>
+            </div>
+            <div class="form-field situation-wide">
+              <label for="situacion-sustento">Referencia de sustento (opcional)</label
+              ><input
+                id="situacion-sustento"
+                maxlength="500"
+                formControlName="referenciaSustento"
+                placeholder="Número de acta, informe o referencia del documento"
+              />
+            </div>
+          </div>
+          @if (situacionForm.controls.accion.value === 'BAJA') {
+            <p class="situation-warning">
+              La baja es definitiva. El sistema comprobará que no existan viajes asignados ni
+              mantenimientos abiertos.
+            </p>
+          }
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="secondary-button"
+              [disabled]="guardandoSituacion()"
+              (click)="cerrarGestionUnidad()"
+            >
+              Cancelar</button
+            ><button
+              type="submit"
+              class="primary-button"
+              [disabled]="guardandoSituacion() || leyendoHistorial()"
+            >
+              {{
+                guardandoSituacion()
+                  ? 'Registrando…'
+                  : situacionForm.controls.accion.value === 'BAJA'
+                    ? 'Continuar con baja definitiva'
+                    : 'Registrar movimiento'
+              }}
+            </button>
+          </div>
+        </form>
+      }
+      @if (errorSituacion()) {
+        <p class="form-message error" role="alert">{{ errorSituacion() }}</p>
+      }
+      <section class="unit-history">
+        <h3>Lecturas del odómetro</h3>
+        <p>
+          Última lectura válida:
+          {{ unidad.odometroKm != null ? unidad.odometroKm + ' km' : 'Sin registro' }} ·
+          {{ unidad.estadoOdometro || 'Sin base registrada' }}
+        </p>
+        <button
+          type="button"
+          class="secondary-button"
+          [disabled]="leyendoOdometro()"
+          (click)="consultarOdometro(unidad)"
+        >
+          {{ leyendoOdometro() ? 'Consultando…' : 'Consultar historial de lecturas' }}
+        </button>
+        @if (errorOdometro()) {
+          <p role="alert">{{ errorOdometro() }}</p>
+        }
+        @if (historialOdometroVisible() && !leyendoOdometro() && !errorOdometro()) {
+          @for (m of lecturasUnidad(); track m.id) {
+            <article>
+              <strong>{{ m.tipo.replaceAll('_', ' ') }} · {{ m.estadoNuevo }}</strong>
+              <p>
+                Lectura anterior:
+                {{ m.lecturaAnterior != null ? m.lecturaAnterior + ' km' : 'Sin registro' }} ·
+                Nueva:
+                {{
+                  m.lecturaNueva != null
+                    ? m.lecturaNueva + ' km'
+                    : 'Sin lectura; no sustituye la anterior'
+                }}
+              </p>
+              @if (m.motivo) {
+                <p>{{ m.motivo }}</p>
+              }
+              <small
+                >Lectura: {{ m.fechaLectura | date: 'dd/MM/yyyy HH:mm' }} · Recibida:
+                {{ m.fechaRegistro | date: 'dd/MM/yyyy HH:mm' }} · {{ m.usuario }}
+                @if (m.servicioId) {
+                  · Viaje #{{ m.servicioId }}
+                }
+              </small>
+            </article>
+          } @empty {
+            <p>No hay lecturas registradas en este historial.</p>
+          }
+        }
+      </section>
+      <section class="unit-history">
+        <h3>Historial de estados</h3>
+        @if (leyendoHistorial()) {
+          <p>Consultando historial…</p>
+        } @else if (!movimientosUnidad().length) {
+          <p>
+            No hay movimientos administrativos registrados. Los viajes y mantenimientos anteriores
+            conservan su historial.
+          </p>
+        }
+        @for (movimiento of movimientosUnidad(); track movimiento.id) {
+          <article>
+            <strong
+              >{{ nombreEstado(movimiento.estadoAnterior) }} →
+              {{ nombreEstado(movimiento.estadoNuevo) }}</strong
+            >
+            <p>Fecha efectiva: {{ movimiento.fechaEfectiva | date: 'dd/MM/yyyy' }}</p>
+            <p>{{ movimiento.motivo }}</p>
+            @if (movimiento.observaciones) {
+              <p>{{ movimiento.observaciones }}</p>
+            }
+            @if (movimiento.referenciaSustento) {
+              <p>Sustento: {{ movimiento.referenciaSustento }}</p>
+            }
+            <small
+              >Registrado por {{ movimiento.responsable }} ·
+              {{ movimiento.registrado | date: 'dd/MM/yyyy HH:mm' }}</small
+            >
+          </article>
+        }
+      </section>
+      @if (unidad.estado === 'BAJA_DEFINITIVA' || !bajaDesdeProceso() || !puedeBaja()) {
+        <div class="modal-actions">
+          <button type="button" class="primary-button" (click)="cerrarGestionUnidad()">
+            Cerrar detalle
+          </button>
+        </div>
+      }
+    </section>
+  </div>
+}
+
+@if (seleccionandoBaja()) {
+  <div class="modal-backdrop situation-backdrop">
+    <section
+      class="modal situation-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="seleccionar-baja"
+    >
+      <header class="modal-header">
+        <div>
+          <p>Retiro definitivo de la flota</p>
+          <h2 id="seleccionar-baja">Dar de baja una unidad</h2>
+        </div>
+        <button
+          class="close-button"
+          type="button"
+          aria-label="Cerrar selección"
+          (click)="seleccionandoBaja.set(false)"
+        >
+          ×
+        </button>
+      </header>
+      <p>Selecciona la unidad. Después indicarás el motivo y confirmarás la baja definitiva.</p>
+      <div class="form-field">
+        <label for="unidad-baja">Unidad</label
+        ><select id="unidad-baja" (change)="seleccionarUnidadBaja($any($event.target).value)">
+          <option value="">Selecciona una unidad</option>
+          @for (v of vehiculos(); track v.id) {
+            @if (v.estado !== 'BAJA_DEFINITIVA') {
+              <option [value]="v.id">
+                {{ v.placa }} · {{ v.marca }} {{ v.modelo }} — {{ nombreEstado(v.estado) }}
+              </option>
+            }
+          }
+        </select>
+      </div>
+      <p class="situation-warning">
+        No se permite la baja con viajes asignados ni mantenimientos abiertos.
+      </p>
+      <footer class="modal-actions">
+        <button type="button" class="secondary-button" (click)="seleccionandoBaja.set(false)">
+          Cancelar
+        </button>
+      </footer>
+    </section>
+  </div>
+}

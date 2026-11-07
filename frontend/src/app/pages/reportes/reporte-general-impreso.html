@@ -1,0 +1,222 @@
+@let i = indicadores();
+<section class="hoja ejecutiva">
+  <header class="cabecera">
+    <img src="assets/branding/logopalmas.webp" alt="Palmas" />
+    <div>
+      <small>GESTIÓN DE TRANSPORTE</small>
+      <h1>Reporte general de operación</h1>
+      <p>{{ periodo() }}</p>
+    </div>
+    <span>01<br />Resumen</span>
+  </header>
+  <div class="filtros">
+    Ruta: {{ ruta() === 'TODAS' ? 'Todas' : ruta() }} · Estado:
+    {{ estado() === 'TODOS' ? 'Todos' : estado().replaceAll('_', ' ') }}<br />Generado:
+    {{ fecha() }} · {{ generadoPor() }}
+  </div>
+  <div class="tarjetas">
+    <article>
+      <span>Viajes de transporte</span><strong>{{ i.datos().servicios.length }}</strong>
+    </article>
+    <article>
+      <span>Completados</span><strong>{{ i.datos().completados.length }}</strong>
+    </article>
+    <article>
+      <span>Cancelados</span><strong>{{ i.datos().cancelados }}</strong>
+    </article>
+    <article>
+      <span>Interrumpidos por avería</span><strong>{{ i.datos().interrumpidos.length }}</strong>
+    </article>
+  </div>
+  <div class="dos graficos">
+    <article class="caja">
+      <h2>Estado de los viajes</h2>
+      <p class="ayuda">Cantidad de servicios de transporte seleccionados</p>
+      @for (b of i.estadosGrafico(); track b.nombre) {
+        <div class="barra">
+          <div>
+            <span>{{ b.nombre }}</span
+            ><b>{{ b.valor }}</b>
+          </div>
+          <div class="pista">
+            <span
+              [style.width.%]="ancho(b.valor, i.estadosGrafico())"
+              [style.background]="b.color"
+            ></span>
+          </div>
+        </div>
+      }
+    </article>
+    <article class="caja">
+      <h2>Salida frente a la programación</h2>
+      @if (i.datos().iniciados.length) {
+        <strong class="porcentaje">{{
+          i.porcentaje(i.datos().puntuales.length, i.datos().iniciados.length)
+        }}</strong>
+        <p class="ayuda">de las salidas medidas fueron a tiempo o antes</p>
+        <div class="barra">
+          <div>
+            <span>Sin atraso</span><b>{{ i.datos().puntuales.length }}</b>
+          </div>
+          <div class="pista">
+            <span
+              class="azul"
+              [style.width.%]="porcentaje(i.datos().puntuales.length, i.datos().iniciados.length)"
+            ></span>
+          </div>
+        </div>
+        <div class="barra">
+          <div>
+            <span>Con atraso</span><b>{{ i.datos().atrasos.length }}</b>
+          </div>
+          <div class="pista">
+            <span
+              class="naranja"
+              [style.width.%]="porcentaje(i.datos().atrasos.length, i.datos().iniciados.length)"
+            ></span>
+          </div>
+        </div>
+        <p class="ayuda">
+          Base: {{ i.datos().iniciados.length }} salidas con fecha programada y marcación
+          utilizables. Atraso promedio de las tardías:
+          <b>{{ i.tiempo(i.datos().atrasoPromedio) }}</b
+          >.
+        </p>
+      } @else {
+        <p class="sin-datos">Sin salidas con datos suficientes.</p>
+      }
+      <p class="ayuda">
+        Se comparan fecha y hora completas, sin tolerancia adicional. El atraso no se atribuye
+        automáticamente al chofer.
+      </p>
+    </article>
+  </div>
+  <h2>Tiempos registrados</h2>
+  <div class="tres tiempos">
+    <article>
+      <span>Duración total promedio</span><strong>{{ i.tiempo(i.datos().totalPromedio) }}</strong
+      ><small>{{ i.datos().muestras.total }} viajes</small>
+    </article>
+    <article>
+      <span>Conducción promedio</span><strong>{{ i.tiempo(i.datos().conduccionPromedio) }}</strong
+      ><small>{{ i.datos().muestras.conduccion }} viajes</small>
+    </article>
+    <article>
+      <span>Trabajo y espera promedio</span
+      ><strong>{{ i.tiempo(i.datos().permanenciaPromedio) }}</strong
+      ><small>{{ i.datos().muestras.permanencia }} viajes</small>
+    </article>
+  </div>
+  <p class="ayuda">
+    Las muestras pueden ser distintas: no sumar estos promedios. Conducción y permanencia excluyen
+    detenciones por avería. Tiempos redondeados al minuto.
+  </p>
+  <div class="dos">
+    <article class="caja">
+      <h2>Mantenimiento</h2>
+      @if (i.mantenimiento(); as m) {
+        <dl>
+          <div>
+            <dt>Ingresos del período</dt>
+            <dd>{{ m.periodo.length }}</dd>
+          </div>
+          <div>
+            <dt>Abiertos actualmente / críticos</dt>
+            <dd>{{ m.abiertos.length }} / {{ m.criticos.length }}</dd>
+          </div>
+          <div>
+            <dt>Tiempo promedio hasta cierre</dt>
+            <dd>{{ i.tiempo(m.horas === null ? null : m.horas * 60) }}</dd>
+          </div>
+          <div>
+            <dt>Costo registrado</dt>
+            <dd>{{ m.costo === null ? 'Sin datos' : 'S/ ' + i.numero(m.costo, 2) }}</dd>
+          </div>
+        </dl>
+        <p class="ayuda">
+          {{ m.sinCosto }} reparados/cerrados sin costo. Ingresos y costos: fecha de reporte.
+          Abiertos: situación actual, sin filtro de ruta ni estado de viaje.
+        </p>
+      } @else {
+        <p>Información no disponible.</p>
+      }
+    </article>
+    <article class="caja">
+      <h2>Calidad y puntos de revisión</h2>
+      <dl>
+        <div>
+          <dt>Odómetros por revisar</dt>
+          <dd>{{ odometrosRevision() }}</dd>
+        </div>
+        <div>
+          <dt>Completados sin duración válida</dt>
+          <dd>{{ i.datos().sinTiempos.length }}</dd>
+        </div>
+        <div>
+          <dt>Viajes pendientes de validación</dt>
+          <dd>
+            {{ i.calidad().pendientes === null ? 'Sin datos' : i.calidad().pendientes!.length }}
+          </dd>
+        </div>
+        <div>
+          <dt>Viajes evaluados</dt>
+          <dd>{{ i.calidad().evaluados === null ? 'Sin datos' : i.calidad().evaluados }}</dd>
+        </div>
+      </dl>
+      <p class="ayuda">
+        Los registros incompletos no representan cero. {{ i.datos().omitidos }} servicios sin
+        programación quedan fuera al filtrar fechas.
+      </p>
+    </article>
+  </div>
+  <footer>
+    Operación de transporte · {{ periodo() }} · Los servicios de auxilio se separan de la
+    productividad.
+  </footer>
+</section>
+<section class="hoja anexo">
+  <header class="cabecera">
+    <img src="assets/branding/logopalmas.webp" alt="Palmas" />
+    <div>
+      <small>BASE DEL REPORTE OPERATIVO</small>
+      <h1>Detalle de viajes de transporte</h1>
+      <p>{{ periodo() }} · {{ i.datos().servicios.length }} servicios</p>
+    </div>
+    <span>02<br />Detalle</span>
+  </header>
+  <table>
+    <thead>
+      <tr>
+        <th>Servicio / unidad</th>
+        <th>Estado / programación</th>
+        <th>Recorrido</th>
+        <th>Salida real</th>
+        <th>Regreso real</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (s of i.datos().servicios; track s.id) {
+        <tr>
+          <td>
+            <b>{{ s.codigo }}</b
+            ><small>{{ s.vehiculo.placa }}</small>
+          </td>
+          <td>
+            {{ s.estado.replaceAll('_', ' ') }}<small>{{ i.fecha(s.fechaHoraSalida) }}</small>
+          </td>
+          <td>{{ s.ruta?.nombre || s.origenDescripcion + ' → ' + s.destinoDescripcion }}</td>
+          <td>{{ i.fecha(s.fechaHoraSalidaReal) }}</td>
+          <td>{{ i.fecha(s.fechaHoraLlegadaReal) }}</td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="5">Sin servicios en la selección.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  <footer>
+    Generado {{ fecha() }} · {{ generadoPor() }} · Los indicadores de diésel y CO₂ se consultan e
+    imprimen por separado en Consumo y emisiones.
+  </footer>
+</section>

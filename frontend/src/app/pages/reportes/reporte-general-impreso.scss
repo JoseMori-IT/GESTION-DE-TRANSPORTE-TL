@@ -1,0 +1,304 @@
+:host {
+  display: block;
+  color: #1d1d1f;
+  font-family: 'Palmas Poppins', Arial, sans-serif;
+  font-size: 9pt;
+  line-height: 1.45;
+}
+.hoja {
+  break-after: page;
+}
+.hoja:last-child {
+  break-after: auto;
+}
+.cabecera {
+  display: flex;
+  align-items: center;
+  gap: 5mm;
+  border-bottom: 2px solid #007aff;
+  padding-bottom: 4mm;
+  margin-bottom: 4mm;
+}
+.cabecera img {
+  width: 27mm;
+  height: auto;
+  object-fit: contain;
+}
+.cabecera > div {
+  flex: 1;
+}
+.cabecera > span {
+  text-align: right;
+  font-size: 8pt;
+  color: #626875;
+}
+.cabecera small {
+  font-size: 7pt;
+  letter-spacing: 0.08em;
+  color: #626875;
+}
+h1 {
+  font-size: 17pt;
+  line-height: 1.2;
+  margin: 1.5mm 0;
+  color: #1d1d1f;
+}
+h2 {
+  font-size: 11pt;
+  margin: 0 0 3mm;
+}
+p {
+  margin: 1.5mm 0;
+}
+.filtros {
+  font-size: 8pt;
+  background: #f6f8fb;
+  padding: 3mm;
+  border: 1px solid #e2e6ee;
+  border-radius: 2mm;
+  margin-bottom: 4mm;
+}
+.tarjetas {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 3mm;
+  margin-bottom: 4mm;
+}
+.tarjetas article,
+.tiempos article {
+  border: 1px solid #dee3eb;
+  border-radius: 2mm;
+  padding: 3mm;
+  display: grid;
+  gap: 1.5mm;
+}
+.tarjetas span,
+.tiempos span {
+  font-size: 8pt;
+  color: #626875;
+}
+.tarjetas strong {
+  font-size: 20pt;
+}
+.dos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4mm;
+  margin: 4mm 0;
+}
+.caja {
+  border: 1px solid #dee3eb;
+  padding: 3.5mm;
+  border-radius: 2mm;
+  break-inside: avoid;
+}
+.ayuda {
+  font-size: 7.5pt;
+  color: #626875;
+  line-height: 1.55;
+}
+.barra {
+  margin: 3mm 0;
+}
+.barra > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 3mm;
+  font-size: 8pt;
+  margin-bottom: 1mm;
+}
+.pista {
+  height: 3mm;
+  background: #eff2f7;
+  border-radius: 2mm;
+  overflow: hidden;
+}
+.pista > span {
+  display: block;
+  height: 100%;
+  border-radius: 2mm;
+}
+.azul {
+  background: #007aff;
+}
+.naranja {
+  background: #e99a24;
+}
+.porcentaje {
+  display: block;
+  font-size: 25pt;
+  color: #0066cc;
+}
+.tres {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3mm;
+}
+.tiempos strong {
+  font-size: 14pt;
+}
+.tiempos small {
+  font-size: 7pt;
+  color: #626875;
+}
+dl {
+  margin: 0;
+}
+dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 3mm;
+  border-bottom: 1px solid #edf0f5;
+  padding: 2mm 0;
+  font-size: 8pt;
+}
+dd {
+  margin: 0;
+  font-weight: 600;
+}
+dt {
+  color: #626875;
+}
+footer {
+  font-size: 7pt;
+  color: #626875;
+  border-top: 1px solid #dce2eb;
+  padding-top: 2mm;
+  margin-top: 4mm;
+  break-inside: avoid;
+}
+.metodologia {
+  margin-top: 4mm;
+}
+.metodologia p {
+  font-size: 8pt;
+  margin: 2mm 0;
+}
+.anexo table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin-top: 3mm;
+  font-size: 7.5pt;
+}
+.anexo th {
+  text-align: left;
+  font-size: 7pt;
+  background: #edf3ff;
+  color: #174b89;
+}
+.anexo td,
+.anexo th {
+  padding: 2mm 1.5mm;
+  border-bottom: 1px solid #dfe4ec;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.anexo td small {
+  display: block;
+  font-size: 7pt;
+  color: #626875;
+  margin-top: 1mm;
+}
+.anexo th:nth-child(1) {
+  width: 23%;
+}
+.anexo th:nth-child(2) {
+  width: 19%;
+}
+.anexo th:nth-child(3) {
+  width: 25%;
+}
+.anexo th:nth-child(4) {
+  width: 18%;
+}
+.anexo th:nth-child(5) {
+  width: 15%;
+}
+.anexo tr {
+  break-inside: avoid;
+}
+.anexo thead {
+  display: table-header-group;
+}
+* {
+  box-sizing: border-box;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+  .hoja {
+    padding: 0;
+  }
+  .cabecera {
+    break-inside: avoid;
+  }
+}
+
+.ejecutiva .barra {
+  margin: 2mm 0;
+}
+.ejecutiva .caja {
+  padding: 3mm;
+}
+.ejecutiva .dos {
+  margin: 3mm 0;
+}
+.ejecutiva footer {
+  margin-top: 2mm;
+}
+.anexo table {
+  font-size: 7pt;
+  line-height: 1.25;
+}
+.anexo td,
+.anexo th {
+  padding: 1.2mm 1.5mm;
+}
+.anexo td small {
+  font-size: 6.5pt;
+  margin-top: 0.4mm;
+}
+
+.ejecutiva .caja .ayuda {
+  font-size: 7pt;
+  line-height: 1.35;
+}
+.ejecutiva .barra {
+  margin: 1.5mm 0;
+}
+.ejecutiva .filtros {
+  padding: 2mm;
+}
+.ejecutiva .tarjetas article,
+.ejecutiva .tiempos article {
+  padding: 2mm;
+}
+.ejecutiva .dos {
+  gap: 3mm;
+  margin: 2mm 0;
+}
+
+.metodologia {
+  padding: 2mm;
+  margin-top: 2mm;
+}
+.metodologia p {
+  font-size: 7.5pt;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.ambiente .cabecera {
+  margin-bottom: 2mm;
+  padding-bottom: 2mm;
+}
+.ambiente footer {
+  font-size: 6.5pt;
+  margin-top: 2mm;
+  padding-top: 1mm;
+}

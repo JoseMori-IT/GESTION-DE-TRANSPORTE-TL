@@ -1,0 +1,549 @@
+<div class="page">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark company-logo">
+        <img src="assets/branding/logopalmas.webp" alt="Grupo Palmas" />
+      </span>
+
+      <div>
+        <strong>Grupo Palmas</strong>
+        <small>Gestión de Transporte</small>
+      </div>
+    </div>
+
+    <nav>
+      <button type="button" class="nav-item" (click)="volverDashboard()">Resumen</button>
+
+      <button type="button" class="nav-item" (click)="irServicios()">Servicios</button>
+
+      <button type="button" class="nav-item active">Reportes</button>
+    </nav>
+
+    <button type="button" class="logout" (click)="cerrarSesion()">Cerrar sesión</button>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div>
+        <p>Análisis de transporte</p>
+        <h1>Indicadores y reportes</h1>
+
+        <span> Consulta el historial y rendimiento de los viajes. </span>
+      </div>
+
+      <div class="topbar-actions">
+        <button type="button" class="print-button" (click)="imprimirReporte()">
+          Imprimir reporte A4
+        </button>
+
+        <button type="button" class="primary-button" (click)="irServicios()">Ver servicios</button>
+      </div>
+    </header>
+
+    <div class="report-tabs" role="tablist" aria-label="Tipo de reporte">
+      <button
+        id="tab-general"
+        type="button"
+        role="tab"
+        [attr.aria-selected]="vistaReporte() === 'general'"
+        aria-controls="reporte-contenido"
+        (click)="cambiarVista('general')"
+      >
+        Reporte general
+      </button>
+      <button
+        id="tab-chofer"
+        type="button"
+        role="tab"
+        [attr.aria-selected]="vistaReporte() === 'chofer'"
+        aria-controls="reporte-contenido"
+        (click)="cambiarVista('chofer')"
+      >
+        Por chofer
+      </button>
+      <button
+        id="tab-consumo"
+        type="button"
+        role="tab"
+        [attr.aria-selected]="vistaReporte() === 'consumo'"
+        aria-controls="reporte-contenido"
+        (click)="cambiarVista('consumo')"
+      >
+        Consumo y emisiones
+      </button>
+    </div>
+    <section
+      id="reporte-contenido"
+      role="tabpanel"
+      [attr.aria-labelledby]="
+        vistaReporte() === 'general'
+          ? 'tab-general'
+          : vistaReporte() === 'consumo'
+            ? 'tab-consumo'
+            : 'tab-chofer'
+      "
+    >
+      <section class="filters-panel">
+        <div class="filters-heading">
+          <div>
+            <p>Filtros</p>
+            <h2>
+              {{
+                vistaReporte() === 'general'
+                  ? 'Vista global de la operación'
+                  : vistaReporte() === 'consumo'
+                    ? 'Consumo de diésel y emisiones estimadas'
+                    : 'Consulta individual del conductor'
+              }}
+            </h2>
+          </div>
+
+          <button type="button" class="clear-button" (click)="limpiarFiltros()">
+            Limpiar filtros
+          </button>
+        </div>
+
+        <div class="filters-grid">
+          @if (vistaReporte() === 'chofer') {
+            <div class="filter-field">
+              <label for="chofer">Chofer</label>
+
+              <select id="chofer" [value]="choferSeleccionado()" (change)="cambiarChofer($event)">
+                <option value="TODOS">Selecciona un chofer</option>
+
+                @for (chofer of choferesDisponibles(); track chofer.id) {
+                  <option [value]="chofer.id">
+                    {{ chofer.nombres }}
+                    {{ chofer.apellidos }}
+                    ({{ chofer.numeroDocumento }})
+                  </option>
+                }
+              </select>
+            </div>
+          }
+          @if (vistaReporte() !== 'consumo') {
+            <div class="filter-field">
+              <label for="estado">Estado</label>
+
+              <select id="estado" [value]="estadoSeleccionado()" (change)="cambiarEstado($event)">
+                <option value="TODOS">Todos los estados</option>
+
+                <option value="PROGRAMADO">Programado</option>
+
+                <option value="EN_CURSO">En curso</option>
+
+                <option value="COMPLETADO">Completado</option>
+
+                <option value="INTERRUMPIDO">Interrumpido por avería</option>
+                <option value="CANCELADO">Cancelado</option>
+              </select>
+            </div>
+          }
+          <div class="filter-field">
+            <label for="ruta">Ruta</label>
+
+            <select id="ruta" [value]="rutaSeleccionada()" (change)="cambiarRuta($event)">
+              <option value="TODAS">Todas las rutas</option>
+
+              @for (ruta of rutasDisponibles(); track ruta) {
+                <option [value]="ruta">
+                  {{ ruta }}
+                </option>
+              }
+            </select>
+          </div>
+
+          <div class="filter-field">
+            <label for="fechaDesde">Desde</label>
+
+            <input
+              id="fechaDesde"
+              type="date"
+              [value]="fechaDesde()"
+              (change)="cambiarFechaDesde($event)"
+            />
+          </div>
+
+          <div class="filter-field">
+            <label for="fechaHasta">Hasta</label>
+
+            <input
+              id="fechaHasta"
+              type="date"
+              [value]="fechaHasta()"
+              (change)="cambiarFechaHasta($event)"
+            />
+          </div>
+        </div>
+      </section>
+
+      @if (cargando()) {
+        <section class="state-panel">
+          <div class="loader"></div>
+          <p>Cargando reporte...</p>
+        </section>
+      } @else if (mensajeError()) {
+        <section class="state-panel error">
+          <h3>No se pudo cargar el reporte</h3>
+          <p>{{ mensajeError() }}</p>
+
+          <button type="button" class="primary-button" (click)="cargarServicios()">
+            Volver a intentar
+          </button>
+        </section>
+      } @else if (vistaReporte() === 'chofer' && choferSeleccionado() === 'TODOS') {
+        <section class="state-panel">
+          <h3>Selecciona un chofer</h3>
+          <p>Elige al conductor para consultar únicamente sus viajes, tiempos y registros.</p>
+        </section>
+      } @else {
+        @if (vistaReporte() === 'consumo') {
+          <button type="button" class="primary-button" (click)="irAbastecimientos()">
+            Ver y registrar abastecimientos</button
+          ><app-consumo-indicadores [datos]="consumo()" />
+        } @else {
+          @if (vistaReporte() === 'general') {
+            <app-indicadores-operativos
+              vista="general"
+              [estado]="estadoSeleccionado()"
+              [servicios]="servicios()"
+              [desde]="fechaDesde()"
+              [hasta]="fechaHasta()"
+              [ruta]="rutaSeleccionada()"
+              chofer="TODOS"
+            />
+          } @else {
+            <app-indicadores-operativos
+              vista="chofer"
+              [estado]="estadoSeleccionado()"
+              [servicios]="servicios()"
+              [desde]="fechaDesde()"
+              [hasta]="fechaHasta()"
+              [ruta]="rutaSeleccionada()"
+              [chofer]="choferSeleccionado()"
+            />
+          }
+          <section class="history-panel">
+            <header class="panel-heading history-heading">
+              <div>
+                <p>Historial</p>
+                <h2>Detalle de servicios</h2>
+              </div>
+
+              <span class="results">
+                {{ totalServicios() }}
+                resultados
+              </span>
+            </header>
+
+            @if (serviciosFiltrados().length === 0) {
+              <div class="empty-state">
+                <h3>No se encontraron servicios</h3>
+
+                <p>Modifica o limpia los filtros de búsqueda.</p>
+              </div>
+            } @else {
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Código</th>
+                      <th>Fecha</th>
+                      <th>Camión</th>
+                      <th>Chofer</th>
+                      <th>Ruta</th>
+                      <th>Producto</th>
+                      <th>Duración</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    @for (servicio of serviciosFiltrados(); track servicio.id) {
+                      <tr>
+                        <td>
+                          <strong>{{ servicio.codigo }}</strong>
+                        </td>
+
+                        <td>
+                          @if (servicio.fechaHoraSalidaReal; as salidaReal) {
+                            {{ salidaReal.slice(0, 16).replace('T', ' ') }}
+                          } @else if (servicio.fechaHoraSalida; as prevista) {
+                            {{ prevista.slice(0, 16).replace('T', ' ') }}
+                          } @else {
+                            Sin fecha
+                          }
+                        </td>
+
+                        <td>
+                          {{ servicio.vehiculo.placa }}
+
+                          <small>
+                            {{ servicio.vehiculo.marca }}
+                            {{ servicio.vehiculo.modelo }}
+                          </small>
+                        </td>
+
+                        <td>
+                          {{ servicio.conductor.nombres }}
+                          {{ servicio.conductor.apellidos }}
+                        </td>
+
+                        <td>
+                          {{
+                            servicio.ruta?.nombre ||
+                              servicio.origenDescripcion + ' → ' + servicio.destinoDescripcion
+                          }}
+                        </td>
+
+                        <td>
+                          {{ obtenerNombreProducto(servicio.productoTransportado) }}
+                        </td>
+
+                        <td>
+                          {{ obtenerDuracionServicio(servicio) }}
+                        </td>
+
+                        <td>
+                          <span
+                            class="status"
+                            [class.programmed]="servicio.estado === 'PROGRAMADO'"
+                            [class.in-progress]="servicio.estado === 'EN_CURSO'"
+                            [class.completed]="servicio.estado === 'COMPLETADO'"
+                            [class.cancelled]="servicio.estado === 'CANCELADO'"
+                          >
+                            {{ servicio.estado.replaceAll('_', ' ') }}
+                          </span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </section>
+        }
+      }
+    </section>
+  </main>
+  @if (vistaReporte() === 'consumo' && !cargando() && !mensajeError()) {
+    <section class="print-report general-print">
+      <app-reporte-consumo-impreso
+        [datos]="consumo()"
+        [periodo]="obtenerPeriodoReporte()"
+        [ruta]="rutaSeleccionada()"
+        [generadoPor]="generadoPor"
+        [fecha]="obtenerFechaGeneracion()"
+      />
+    </section>
+  }
+
+  @if (vistaReporte() === 'general') {
+    @if (indicadores(); as i) {
+      <section class="print-report general-print">
+        <app-reporte-general-impreso
+          [indicadores]="i"
+          [periodo]="obtenerPeriodoReporte()"
+          [ruta]="rutaSeleccionada()"
+          [estado]="estadoSeleccionado()"
+          [generadoPor]="generadoPor"
+          [fecha]="obtenerFechaGeneracion()"
+        />
+      </section>
+    }
+  }
+  @if (choferReporte(); as chofer) {
+    <section class="print-report">
+      <header class="print-header">
+        <div class="print-brand">
+          <img src="assets/branding/logopalmas.webp" alt="Grupo Palmas" />
+
+          <div>
+            <strong>Grupo Palmas</strong>
+            <small>Gestión de Transporte</small>
+          </div>
+        </div>
+
+        <div class="print-title">
+          <h1>Reporte operativo del conductor</h1>
+          <p>Generado el {{ obtenerFechaGeneracion() }}</p>
+          <small> Responsable: {{ generadoPor }} </small>
+        </div>
+      </header>
+
+      <section class="driver-information">
+        <h2>Información del conductor</h2>
+
+        <div class="driver-grid">
+          <div>
+            <span>Conductor</span>
+            <strong> {{ chofer.nombres }} {{ chofer.apellidos }} </strong>
+          </div>
+
+          <div>
+            <span>Documento</span>
+            <strong>{{ chofer.numeroDocumento }}</strong>
+          </div>
+
+          <div>
+            <span>Periodo consultado</span>
+            <strong>{{ obtenerPeriodoReporte() }}</strong>
+          </div>
+
+          <div>
+            <span>Estado filtrado</span>
+            <strong>
+              {{
+                estadoSeleccionado() === 'TODOS'
+                  ? 'Todos'
+                  : estadoSeleccionado().replaceAll('_', ' ')
+              }}
+            </strong>
+          </div>
+
+          <div>
+            <span>Ruta filtrada</span>
+            <strong>
+              {{ rutaSeleccionada() === 'TODAS' ? 'Todas las rutas' : rutaSeleccionada() }}
+            </strong>
+          </div>
+
+          <div>
+            <span>Total de resultados</span>
+            <strong>{{ totalServicios() }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="print-summary">
+        <div>
+          <span>Servicios</span>
+          <strong>{{ totalServicios() }}</strong>
+        </div>
+
+        <div>
+          <span>Completados</span>
+          <strong>{{ totalCompletados() }}</strong>
+        </div>
+
+        <div>
+          <span>Finalizados / total</span>
+          <strong>{{ porcentajeCumplimiento() }}%</strong>
+        </div>
+
+        <div>
+          <span>Programados</span>
+          <strong>{{ totalProgramados() }}</strong>
+        </div>
+
+        <div>
+          <span>En curso</span>
+          <strong>{{ totalEnCurso() }}</strong>
+        </div>
+
+        <div>
+          <span>Cancelados</span>
+          <strong>{{ totalCancelados() }}</strong>
+        </div>
+
+        <div>
+          <span>Duración total promedio</span>
+          <strong>
+            {{ formatearDuracion(duracionPromedio()) }}
+          </strong>
+        </div>
+      </section>
+
+      <section class="print-detail">
+        <h2>Seguimiento de los viajes</h2>
+        <p class="report-help">
+          Fechas según las marcaciones recibidas. La duración total incluye conducción, trabajo y
+          espera. Los kilómetros planificados son estimaciones.
+        </p>
+        @for (servicio of serviciosFiltrados(); track servicio.id) {
+          <article class="trip-record">
+            <header>
+              <h3>{{ servicio.codigo }}</h3>
+              <strong>{{ servicio.estado.replaceAll('_', ' ') }}</strong>
+            </header>
+            <div class="trip-facts">
+              <div>
+                <span>Unidad</span><strong>{{ servicio.vehiculo.placa }}</strong>
+              </div>
+              <div>
+                <span>Carga principal</span
+                ><strong>{{ obtenerNombreProducto(servicio.productoTransportado) }}</strong>
+              </div>
+              <div>
+                <span>Salida prevista</span
+                ><strong>{{ formatearFechaHoraReporte(servicio.fechaHoraSalida) }}</strong>
+              </div>
+              <div>
+                <span>Salida real</span
+                ><strong>{{ formatearFechaHoraReporte(servicio.fechaHoraSalidaReal) }}</strong>
+              </div>
+              <div>
+                <span>Regreso real</span
+                ><strong>{{ formatearFechaHoraReporte(servicio.fechaHoraLlegadaReal) }}</strong>
+              </div>
+              <div>
+                <span>Duración total real</span
+                ><strong>{{ obtenerDuracionServicio(servicio) }}</strong>
+              </div>
+              <div>
+                <span>Conducción registrada</span
+                ><strong>{{ tiemposReporte(servicio, false) }}</strong>
+              </div>
+              <div>
+                <span>Trabajo y espera en paradas</span
+                ><strong>{{ tiemposReporte(servicio, true) }}</strong>
+              </div>
+              <div>
+                <span>Distancia planificada</span
+                ><strong>{{
+                  servicio.distanciaEstimadaKm != null
+                    ? servicio.distanciaEstimadaKm + ' km'
+                    : 'Sin registro'
+                }}</strong>
+              </div>
+              <div>
+                <span>Control de odómetro</span
+                ><strong>{{ controlOdometroReporte(servicio) }}</strong>
+              </div>
+            </div>
+            <p><b>Recorrido:</b> {{ recorridoReporte(servicio) }}</p>
+            @if (servicio.tramos?.length) {
+              <ol class="trip-stops">
+                @for (t of tramosReporte(servicio); track t.orden) {
+                  <li>
+                    <strong
+                      >{{ t.destino }} · {{ t.actividad }} ·
+                      {{ obtenerNombreProducto(t.productoTransportado) }}</strong
+                    ><span
+                      >Salida del tramo: {{ formatearFechaHoraReporte(t.salidaReal) }} · Llegada:
+                      {{ formatearFechaHoraReporte(t.llegadaReal) }}</span
+                    >
+                  </li>
+                }
+              </ol>
+            }
+            @if (servicio.observaciones) {
+              <p><b>Observaciones:</b> {{ servicio.observaciones }}</p>
+            }
+          </article>
+        }
+      </section>
+
+      <footer class="print-footer">
+        <p>
+          Documento generado por el Sistema de Gestión de Transporte.<br />
+          Responsable: {{ generadoPor }}
+        </p>
+
+        <div class="signature">
+          <strong>Firma del responsable</strong>
+        </div>
+      </footer>
+    </section>
+  }
+</div>

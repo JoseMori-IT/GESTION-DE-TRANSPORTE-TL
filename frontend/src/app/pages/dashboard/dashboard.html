@@ -1,0 +1,325 @@
+@if (cargando()) {
+  <main class="loading-page">
+    <div class="loader"></div>
+    <p>Cargando información...</p>
+  </main>
+} @else if (mensajeError()) {
+  <main class="loading-page">
+    <div class="error-state">
+      <h2>No se pudo cargar el panel</h2>
+      <p>{{ mensajeError() }}</p>
+
+      <button type="button" class="primary-button" (click)="cargarDashboard()">
+        Volver a intentar
+      </button>
+    </div>
+  </main>
+} @else if (perfil(); as usuario) {
+  <div class="dashboard">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo-container">
+          <img src="assets/branding/logopalmas.webp" alt="Grupo Palmas" />
+        </div>
+
+        <span>Gestión de Transporte</span>
+      </div>
+
+      <nav>
+        <button type="button" class="nav-item" routerLink="/cambiar-contrasena">
+          <span class="nav-label">Cambiar contraseña</span>
+        </button>
+        @if (['MASTER', 'COORDINADOR', 'ADMINISTRADOR'].includes(usuario.rol)) {
+          <button type="button" class="nav-item" routerLink="/restablecer-cuentas">
+            <span class="nav-label">Restablecer acceso</span>
+          </button>
+        }
+        <button type="button" class="nav-item active">
+          <span class="nav-label">Resumen</span>
+        </button>
+
+        <button type="button" class="nav-item" (click)="irVehiculos()">
+          <span class="nav-label">Camiones</span>
+        </button>
+
+        <button type="button" class="nav-item" (click)="irFlota()">
+          <span class="nav-label">Flota</span>
+        </button>
+
+        <button type="button" class="nav-item" (click)="irMantenimiento()">
+          <span class="nav-label"> Mantenimiento </span>
+        </button>
+
+        <button type="button" class="nav-item" (click)="irConductores()">
+          <span class="nav-label">Personal</span>
+        </button>
+
+        <button type="button" class="nav-item" (click)="irRutas()">
+          <span class="nav-label">Rutas</span>
+        </button>
+
+        <button type="button" class="nav-item" (click)="irSolicitudes()">
+          <span class="nav-label">Solicitudes</span>
+        </button>
+
+        <button type="button" class="nav-item" (click)="irServicios()">
+          <span class="nav-label">Servicios</span>
+        </button>
+
+        <button type="button" class="nav-item" (click)="irReportes()">
+          <span class="nav-label">Reportes</span>
+        </button>
+        @if (['MASTER', 'COORDINADOR', 'ADMINISTRADOR'].includes(usuario.rol)) {
+          <button type="button" class="nav-item" (click)="irPersonalAdministrativo()">
+            <span class="nav-label"> Administrativos </span>
+          </button>
+
+          @if (usuario.rol === 'MASTER') {
+            <button type="button" class="nav-item" (click)="irAuditoria()">
+              <span class="nav-label"> Auditoría </span>
+            </button>
+          }
+        }
+      </nav>
+      <button type="button" class="logout" (click)="cerrarSesion()">
+        <span class="logout-label"> Cerrar sesión </span>
+      </button>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <div class="welcome">
+          <p>Panel principal</p>
+
+          <h1>Bienvenido, {{ usuario.nombreCorto || usuario.nombre }}</h1>
+        </div>
+        <app-pendientes-operativos />
+      </header>
+
+      <section class="summary">
+        <button type="button" class="summary-card" (click)="irVehiculos()">
+          <span class="card-content">
+            <small>Camiones registrados</small>
+
+            <strong>
+              {{ totalCamiones() }}
+            </strong>
+
+            <span class="card-detail">
+              {{ camionesDisponibles() }}
+              disponibles
+            </span>
+          </span>
+        </button>
+
+        <button type="button" class="summary-card" (click)="irConductores()">
+          <span class="card-content">
+            <small>Choferes disponibles</small>
+
+            <strong>
+              {{ choferesDisponibles() }}
+            </strong>
+
+            <span class="card-detail"> Personal disponible para asignación </span>
+          </span>
+        </button>
+
+        <button type="button" class="summary-card" (click)="irServicios()">
+          <span class="card-content">
+            <small>Servicios programados</small>
+
+            <strong>
+              {{ serviciosProgramados() }}
+            </strong>
+
+            <span class="card-detail"> Pendientes de iniciar </span>
+          </span>
+        </button>
+
+        <button type="button" class="summary-card" (click)="irServicios()">
+          <span class="card-content">
+            <small>Servicios en curso</small>
+
+            <strong>
+              {{ serviciosEnCurso() }}
+            </strong>
+
+            <span class="card-detail"> Camiones transportando carga </span>
+          </span>
+        </button>
+
+        <button type="button" class="summary-card" (click)="irMantenimiento()">
+          <span class="card-content">
+            <small> Mantenimientos pendientes </small>
+
+            <strong>
+              {{ mantenimientosPendientes() }}
+            </strong>
+
+            <span class="card-detail"> Unidades pendientes de atención </span>
+          </span>
+        </button>
+      </section>
+
+      <section class="dashboard-charts" aria-label="Indicadores visuales de operación">
+        <article class="chart-card">
+          <header>
+            <div>
+              <p>Operaciones de transporte</p>
+              <h2>Servicios por estado</h2>
+            </div>
+            <span class="chart-total">{{ totalServicios() }} servicios</span>
+          </header>
+          <app-grafico-barras
+            titulo="Cantidad de servicios por estado"
+            [datos]="barrasServicios()"
+          />
+          <footer>
+            <span>Todos los servicios registrados · Actualizado {{ actualizadoGraficos() }}</span
+            ><a routerLink="/servicios">Ver servicios →</a>
+          </footer>
+        </article>
+        <article class="chart-card">
+          <header>
+            <div>
+              <p>Disponibilidad de flota</p>
+              <h2>Estado de los camiones</h2>
+            </div>
+            <span class="chart-total">{{ totalCamiones() }} activos</span>
+          </header>
+          <app-grafico-barras
+            titulo="Cantidad de camiones activos por estado"
+            [datos]="barrasCamiones()"
+          />
+          <footer>
+            <span>Estado actual · Excluye camiones inactivos</span
+            ><a routerLink="/vehiculos">Ver vehículos →</a>
+          </footer>
+        </article>
+      </section>
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p>Operaciones</p>
+            <h2>Servicios recientes</h2>
+          </div>
+
+          <button type="button" class="primary-button" (click)="irServicios()">
+            Ver servicios
+          </button>
+        </div>
+
+        @if (serviciosRecientes().length === 0) {
+          <div class="empty-state">
+            <span>≡</span>
+
+            <h3>Aún no existen servicios registrados</h3>
+
+            <p>Los últimos servicios de transporte aparecerán aquí.</p>
+
+            <button type="button" class="primary-button" (click)="irSolicitudes()">
+              Nueva solicitud
+            </button>
+          </div>
+        } @else {
+          <div class="recent-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Camión</th>
+                  <th>Chofer</th>
+                  <th>Ruta</th>
+                  <th>Producto</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (servicio of serviciosRecientes(); track servicio.id) {
+                  <tr>
+                    <td data-label="Código">
+                      <strong>
+                        {{ servicio.codigo }}
+                      </strong>
+                    </td>
+
+                    <td data-label="Camión">
+                      {{ servicio.vehiculo.placa }}
+
+                      <small>
+                        {{ servicio.vehiculo.marca }}
+                        {{ servicio.vehiculo.modelo }}
+                      </small>
+                    </td>
+
+                    <td data-label="Chofer">
+                      {{ servicio.conductor.nombres }}
+                      {{ servicio.conductor.apellidos }}
+                    </td>
+
+                    <td data-label="Ruta">
+                      {{
+                        servicio.ruta?.nombre ||
+                          servicio.origenDescripcion + ' → ' + servicio.destinoDescripcion
+                      }}
+                    </td>
+
+                    <td data-label="Producto">
+                      @switch (servicio.productoTransportado) {
+                        @case ('RFF') {
+                          RFF — Racimo Fruto Fresco
+                        }
+
+                        @case ('FS') {
+                          FS — Fruto Fresco
+                        }
+
+                        @case ('TORTA_CLARIFICACION') {
+                          Torta de clarificación
+                        }
+
+                        @case ('LODO_BIOGAS') {
+                          Lodo de biogás
+                        }
+
+                        @case ('RESIDUOS_VARIOS') {
+                          Residuos varios
+                        }
+
+                        @default {
+                          {{ servicio.productoTransportado.replaceAll('_', ' ') }}
+                        }
+                      }
+                    </td>
+
+                    <td data-label="Estado">
+                      <span
+                        class="service-status"
+                        [class.programmed]="servicio.estado === 'PROGRAMADO'"
+                        [class.in-progress]="servicio.estado === 'EN_CURSO'"
+                        [class.completed]="servicio.estado === 'COMPLETADO'"
+                        [class.cancelled]="servicio.estado === 'CANCELADO'"
+                      >
+                        {{ servicio.estado.replaceAll('_', ' ') }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <footer class="panel-footer">
+            <span>
+              {{ serviciosCompletados() }}
+              servicios completados
+            </span>
+
+            <button type="button" class="text-button" (click)="irServicios()">Ver todos →</button>
+          </footer>
+        }
+      </section>
+    </main>
+  </div>
+}

@@ -1,0 +1,18 @@
+<figure class="vehicle-photo" [class.compact]="compacta()">
+  @if (urlFoto(); as url) {
+    <img [src]="url" [alt]="'Unidad ' + placa()" />
+  } @else {
+    <div class="photo-placeholder" aria-hidden="true">
+      <svg viewBox="0 0 120 64" role="img">
+        <path d="M16 43h88l-7-20H45l-9 11H21z" />
+        <path d="M36 34h57" />
+        <circle cx="34" cy="47" r="8" />
+        <circle cx="89" cy="47" r="8" />
+      </svg>
+
+      @if (!compacta()) {
+        <span>{{ cargando() ? 'Cargando foto' : 'Sin foto' }}</span>
+      }
+    </div>
+  }
+</figure>

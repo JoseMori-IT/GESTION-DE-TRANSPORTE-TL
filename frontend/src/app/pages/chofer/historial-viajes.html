@@ -1,0 +1,64 @@
+<section class="history-list">
+  @for (servicio of viajes; track servicio.id) {
+    <article class="history-card" [class.history-expanded]="expandidoId() === servicio.id">
+      <div class="history-main">
+        <div>
+          <small>{{ servicio.codigo }}</small>
+          <strong>
+            {{ servicio.origenDescripcion }}
+            →
+            {{ servicio.destinoDescripcion }}
+          </strong>
+          <span>
+            {{ servicio.vehiculo.placa }}
+            ·
+            {{ nombreProducto(servicio.productoTransportado) }}
+          </span>
+        </div>
+
+        <span
+          class="status"
+          [class.completed]="servicio.estado === 'COMPLETADO'"
+          [class.cancelled]="servicio.estado === 'CANCELADO'"
+        >
+          {{
+            servicio.estado === 'COMPLETADO'
+              ? 'COMPLETADO'
+              : servicio.estado === 'INTERRUMPIDO'
+                ? 'INTERRUMPIDO POR AVERÍA'
+                : 'CANCELADO'
+          }}
+        </span>
+      </div>
+
+      <div class="history-date-summary">
+        <strong>{{ fechaViaje(servicio) }}</strong>
+        <span>Inicio de viaje: {{ fechaHoraViaje(servicio.fechaHoraSalidaReal) }}</span>
+        <span>Fin de viaje: {{ fechaHoraViaje(servicio.fechaHoraLlegadaReal) }}</span>
+      </div>
+
+      <button
+        type="button"
+        class="history-detail-button"
+        [attr.aria-expanded]="expandidoId() === servicio.id"
+        [attr.aria-controls]="'detalle-historial-' + servicio.id"
+        (click)="expandidoId.set(expandidoId() === servicio.id ? null : servicio.id)"
+      >
+        {{ expandidoId() === servicio.id ? 'Ocultar detalles' : 'Ver detalles' }}
+      </button>
+      @if (expandidoId() === servicio.id) {
+        <div class="history-detail-content" [id]="'detalle-historial-' + servicio.id">
+          <app-incidencia-viaje
+            [servicio]="servicio"
+            [chofer]="true"
+            (actualizado)="actualizado.emit($event)"
+          />
+          <app-avance-viaje [servicio]="servicio" />
+          <button type="button" class="history-evidence-button" (click)="evidencias.emit(servicio)">
+            {{ servicio.estado === 'CANCELADO' ? 'Consultar evidencias' : 'Evidencias digitales' }}
+          </button>
+        </div>
+      }
+    </article>
+  }
+</section>

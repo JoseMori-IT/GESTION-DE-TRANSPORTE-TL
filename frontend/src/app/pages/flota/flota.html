@@ -1,0 +1,492 @@
+<div class="fleet-page">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo-box">
+        <img class="brand-logo" src="assets/branding/logopalmas.webp" alt="Grupo Palmas" />
+      </div>
+
+      <span>Gestión de Transporte</span>
+    </div>
+
+    <div class="topbar-actions">
+      <button type="button" class="header-button" (click)="volverDashboard()">Resumen</button>
+
+      <button type="button" class="logout-button" (click)="cerrarSesion()">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="content">
+    <section class="page-heading">
+      <div>
+        <p>Control operativo</p>
+        <h1>Monitoreo de flota</h1>
+
+        <span> Consulta la disponibilidad, operación y estado actual de las unidades. </span>
+      </div>
+
+      <div class="heading-actions">
+        <button type="button" class="secondary-button" (click)="irVehiculos()">
+          Administrar unidades
+        </button>
+
+        <button
+          type="button"
+          class="primary-button"
+          [disabled]="cargando()"
+          (click)="cargarMonitoreo()"
+        >
+          {{ cargando() ? 'Actualizando...' : 'Actualizar' }}
+        </button>
+      </div>
+    </section>
+
+    @if (mensajeExito()) {
+      <div class="notification success">
+        {{ mensajeExito() }}
+      </div>
+    }
+
+    @if (mensajeError()) {
+      <div class="notification error">
+        {{ mensajeError() }}
+      </div>
+    }
+
+    <section class="summary">
+      <button
+        type="button"
+        class="summary-card total"
+        [class.active]="filtro() === 'TODOS'"
+        (click)="seleccionarFiltro('TODOS')"
+      >
+        <div>
+          <small>Total de unidades</small>
+          <strong>{{ totalUnidades() }}</strong>
+          <span>Flota registrada</span>
+        </div>
+      </button>
+
+      <button
+        type="button"
+        class="summary-card available"
+        [class.active]="filtro() === 'DISPONIBLE'"
+        (click)="seleccionarFiltro('DISPONIBLE')"
+      >
+        <div>
+          <small>Disponibles</small>
+          <strong>{{ totalDisponibles() }}</strong>
+          <span>Listas para asignación</span>
+        </div>
+      </button>
+
+      <button
+        type="button"
+        class="summary-card reserved"
+        [class.active]="filtro() === 'PROGRAMADO'"
+        (click)="seleccionarFiltro('PROGRAMADO')"
+      >
+        <div>
+          <small>Programados</small>
+          <strong>{{ totalProgramados() }}</strong>
+          <span>Unidades reservadas</span>
+        </div>
+      </button>
+
+      <button
+        type="button"
+        class="summary-card operating"
+        [class.active]="filtro() === 'EN_SERVICIO'"
+        (click)="seleccionarFiltro('EN_SERVICIO')"
+      >
+        <div>
+          <small>En operación</small>
+          <strong>{{ totalEnServicio() }}</strong>
+          <span>Realizando traslados</span>
+        </div>
+      </button>
+
+      <button
+        type="button"
+        class="summary-card maintenance"
+        [class.active]="filtro() === 'MANTENIMIENTO'"
+        (click)="seleccionarFiltro('MANTENIMIENTO')"
+      >
+        <div>
+          <small>En mantenimiento</small>
+          <strong>{{ totalMantenimiento() }}</strong>
+          <span>No disponibles temporalmente</span>
+        </div>
+      </button>
+
+      <button
+        type="button"
+        class="summary-card inactive"
+        [class.active]="filtro() === 'INACTIVO'"
+        (click)="seleccionarFiltro('INACTIVO')"
+      >
+        <div>
+          <small>Pendiente de clasificar</small>
+          <strong>{{ totalInactivos() }}</strong>
+          <span>Registros anteriores</span>
+        </div>
+      </button>
+      <button type="button" class="summary-card" (click)="seleccionarFiltro('BAJA_DEFINITIVA')">
+        <div>
+          <small>Fuera de servicio</small><strong>{{ totalBajas() }}</strong
+          ><span>Historial conservado, sin nuevas asignaciones</span>
+        </div>
+      </button>
+    </section>
+
+    <section class="fleet-section">
+      <div class="section-heading">
+        <div>
+          <p>Disponibilidad de unidades</p>
+          <h2>Unidades monitoreadas</h2>
+        </div>
+
+        <span class="result-counter">
+          {{ unidades().length }}
+          {{ unidades().length === 1 ? 'unidad' : 'unidades' }}
+        </span>
+      </div>
+
+      @if (cargando()) {
+        <div class="state-card">
+          <div class="loader"></div>
+          <p>Cargando información de la flota...</p>
+        </div>
+      } @else if (unidades().length === 0) {
+        <div class="state-card">
+          <h3>
+            {{
+              totalUnidades() === 0
+                ? 'Aún no hay unidades registradas'
+                : 'No existen unidades en este estado'
+            }}
+          </h3>
+
+          <p>
+            {{
+              totalUnidades() === 0
+                ? 'Registra una unidad desde Vehículos para comenzar el monitoreo.'
+                : 'Selecciona otro indicador para consultar el resto de la flota.'
+            }}
+          </p>
+        </div>
+      } @else {
+        <div class="fleet-grid">
+          @for (unidad of unidades(); track unidad.vehiculo.id) {
+            <article
+              class="vehicle-card"
+              [id]="'unidad-' + unidad.vehiculo.id"
+              [class.reserved]="unidad.servicio?.estado === 'PROGRAMADO'"
+              [class.operating]="unidad.vehiculo.estado === 'EN_SERVICIO'"
+              [class.maintenance]="unidad.vehiculo.estado === 'MANTENIMIENTO'"
+              [class.inactive]="unidad.vehiculo.estado === 'INACTIVO'"
+            >
+              <app-foto-vehiculo
+                class="card-photo"
+                [vehiculoId]="unidad.vehiculo.id"
+                [tieneFoto]="unidad.vehiculo.tieneFoto"
+                [placa]="unidad.vehiculo.placa"
+              />
+
+              <header class="vehicle-header">
+                <div>
+                  <small>
+                    {{ unidad.vehiculo.codigoInterno }}
+                  </small>
+
+                  <h3>{{ unidad.vehiculo.placa }}</h3>
+                  @if (unidad.vehiculo.estadoOdometro === 'AVERIADO') {
+                    <p class="odo-alerta">Odómetro averiado · revisar lectura y tablero</p>
+                  }
+
+                  <span>
+                    {{ unidad.vehiculo.marca }}
+                    {{ unidad.vehiculo.modelo }}
+                  </span>
+                </div>
+
+                @if (unidad.servicio?.estado === 'PROGRAMADO') {
+                  <span class="status reserved"> Programado </span>
+                } @else {
+                  <span
+                    class="status"
+                    [class.available]="unidad.vehiculo.estado === 'DISPONIBLE'"
+                    [class.operating]="unidad.vehiculo.estado === 'EN_SERVICIO'"
+                    [class.maintenance]="unidad.vehiculo.estado === 'MANTENIMIENTO'"
+                    [class.inactive]="unidad.vehiculo.estado === 'INACTIVO'"
+                  >
+                    {{ etiquetaEstado(unidad.vehiculo.estado) }}
+                  </span>
+                }
+              </header>
+
+              <div class="vehicle-data">
+                <div>
+                  <small>Tipo</small>
+                  <strong>
+                    {{ unidad.vehiculo.tipo.replaceAll('_', ' ') }}
+                  </strong>
+                </div>
+
+                <div>
+                  <small>Año</small>
+                  <strong>
+                    {{ unidad.vehiculo.anioFabricacion }}
+                  </strong>
+                </div>
+              </div>
+
+              @if (unidad.servicio; as servicio) {
+                <section class="operation">
+                  <div class="operation-heading">
+                    <div>
+                      <small>Operación asignada</small>
+                      <strong>{{ servicio.codigo }}</strong>
+                    </div>
+
+                    <span
+                      class="service-status"
+                      [class.in-progress]="servicio.estado === 'EN_CURSO'"
+                    >
+                      {{ servicio.estado === 'EN_CURSO' ? 'En curso' : 'Programado' }}
+                    </span>
+                  </div>
+
+                  <div class="route">
+                    <div class="route-point">
+                      <span class="point origin"></span>
+
+                      <div>
+                        <small>Origen</small>
+                        <strong>
+                          {{ servicio.origenDescripcion }}
+                        </strong>
+                      </div>
+                    </div>
+
+                    <span class="route-line"></span>
+
+                    <div class="route-point">
+                      <span class="point destination"></span>
+
+                      <div>
+                        <small>Destino</small>
+                        <strong>
+                          {{ servicio.destinoDescripcion }}
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="operation-data">
+                    <div>
+                      <small>Chofer</small>
+                      <strong>
+                        {{ servicio.conductor.nombres }}
+                        {{ servicio.conductor.apellidos }}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <small>Producto</small>
+                      <strong>
+                        {{ etiquetaProducto(servicio.productoTransportado) }}
+                      </strong>
+                    </div>
+
+                    <div class="full-width">
+                      <small>
+                        {{ servicio.estado === 'EN_CURSO' ? 'Salida real' : 'Salida prevista' }}
+                      </small>
+
+                      <strong>
+                        @if (servicio.estado === 'EN_CURSO' && servicio.fechaHoraSalidaReal) {
+                          {{ servicio.fechaHoraSalidaReal | date: 'dd/MM/yyyy HH:mm' }}
+                        } @else if (servicio.fechaHoraSalida) {
+                          {{ servicio.fechaHoraSalida | date: 'dd/MM/yyyy HH:mm' }}
+                        } @else {
+                          Sin hora registrada
+                        }
+                      </strong>
+                    </div>
+                  </div>
+                </section>
+              } @else {
+                <section class="no-operation">
+                  @if (unidad.vehiculo.estado === 'DISPONIBLE') {
+                    <span class="availability-dot"></span>
+
+                    <div>
+                      <strong>Unidad disponible</strong>
+                      <small>Sin servicio activo asignado</small>
+                    </div>
+                  } @else if (unidad.vehiculo.estado === 'MANTENIMIENTO') {
+                    <div>
+                      <strong>Atención pendiente</strong>
+                      <small> Unidad temporalmente no disponible </small>
+                    </div>
+                  } @else if (unidad.vehiculo.estado === 'INACTIVO') {
+                    <span class="inactive-symbol">!</span>
+
+                    <div>
+                      <strong>Pendiente de clasificar</strong>
+                      <small> La unidad no admite asignaciones </small>
+                    </div>
+                  } @else if (
+                    unidad.vehiculo.estado === 'SUSPENDIDO' ||
+                    unidad.vehiculo.estado === 'BAJA_DEFINITIVA'
+                  ) {
+                    <div>
+                      <strong>{{ etiquetaEstado(unidad.vehiculo.estado) }}</strong
+                      ><small>{{
+                        unidad.vehiculo.estado === 'BAJA_DEFINITIVA'
+                          ? 'Retirada de la flota; historial conservado'
+                          : 'Registro anterior de prueba, pendiente de depuración'
+                      }}</small>
+                    </div>
+                  } @else {
+                    <div>
+                      <strong>Operación no encontrada</strong>
+                      <small> Actualiza la información del monitor </small>
+                    </div>
+                  }
+                </section>
+              }
+
+              <footer class="vehicle-actions">
+                @if (
+                  unidad.servicio &&
+                  (unidad.servicio.estado === 'PROGRAMADO' || unidad.servicio.estado === 'EN_CURSO')
+                ) {
+                  <button type="button" class="view-button" (click)="irServicios()">
+                    Ver servicio
+                  </button>
+                } @else if (unidad.vehiculo.estado === 'DISPONIBLE') {
+                  <button
+                    type="button"
+                    class="maintenance-button"
+                    [disabled]="procesandoId() === unidad.vehiculo.id"
+                    (click)="cambiarEstado(unidad.vehiculo, 'MANTENIMIENTO')"
+                  >
+                    Enviar a mantenimiento
+                  </button>
+                } @else if (
+                  ['INACTIVO', 'SUSPENDIDO', 'BAJA_DEFINITIVA'].includes(unidad.vehiculo.estado)
+                ) {
+                  <button
+                    type="button"
+                    class="view-button"
+                    (click)="verGestionUnidad(unidad.vehiculo.id)"
+                  >
+                    {{
+                      unidad.vehiculo.estado === 'BAJA_DEFINITIVA'
+                        ? 'Ver baja e historial'
+                        : 'Ver historial'
+                    }}
+                  </button>
+                }
+              </footer>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  </main>
+</div>
+
+@if (mantenimientoPendiente(); as vehiculo) {
+  <div class="modal-backdrop fleet-confirm-backdrop">
+    <section class="fleet-confirm-modal" role="dialog" aria-modal="true">
+      <p class="fleet-confirm-kicker">Gestión de flota</p>
+      <h2>Enviar unidad a mantenimiento</h2>
+      <p>
+        ¿Desea enviar a mantenimiento la unidad <strong>{{ vehiculo.placa }}</strong
+        >?
+      </p>
+      <label class="fleet-priority-field"
+        ><span>Qué se realizará</span
+        ><input
+          [value]="tituloMantenimiento()"
+          (input)="tituloMantenimiento.set($any($event.target).value)"
+          placeholder="Ej. Cambio de aceite"
+      /></label>
+      <label class="fleet-priority-field"
+        ><span>Tipo de falla</span
+        ><select
+          [value]="tipoFallaMantenimiento()"
+          (change)="tipoFallaMantenimiento.set($any($event.target).value)"
+        >
+          <option value="MOTOR">Motor</option>
+          <option value="TRANSMISION">Transmisión</option>
+          <option value="FRENOS">Frenos</option>
+          <option value="SISTEMA_ELECTRICO">Sistema eléctrico</option>
+          <option value="MANTENIMIENTO_PREVENTIVO">Mantenimiento preventivo</option>
+          <option value="OTRO">Otro</option>
+        </select></label
+      >
+      <label class="fleet-priority-field"
+        ><span>Descripción</span
+        ><textarea
+          rows="3"
+          [value]="descripcionMantenimiento()"
+          (input)="descripcionMantenimiento.set($any($event.target).value)"
+          placeholder="Describe la atención requerida"
+        ></textarea>
+      </label>
+      <label class="fleet-priority-field">
+        <span>Prioridad de la atención</span>
+        <select
+          [value]="prioridadMantenimiento()"
+          (change)="prioridadMantenimiento.set($any($event.target).value)"
+        >
+          <option value="BAJA">Baja</option>
+          <option value="MEDIA">Media</option>
+          <option value="ALTA">Alta</option>
+          <option value="CRITICA">Crítica</option>
+        </select>
+      </label>
+      <label class="fleet-priority-field">
+        <span>Odómetro al ingresar a mantenimiento (km, opcional)</span>
+        <input
+          type="number"
+          min="0"
+          max="2147483647"
+          step="1"
+          [value]="kilometrajeMantenimiento() ?? ''"
+          (input)="actualizarKilometrajeMantenimiento($event)"
+          placeholder="Ej. 125800"
+          [disabled]="procesandoId() !== null"
+        />
+        <small
+          >Registra la lectura actual del odómetro. Se incluirá en el historial y en el reporte de
+          esta atención. Si no la conoces, deja el campo vacío.</small
+        >
+      </label>
+      <footer>
+        <button
+          type="button"
+          class="secondary-button"
+          [disabled]="procesandoId() !== null"
+          (click)="cancelarEnvioMantenimiento()"
+        >
+          No
+        </button>
+        <button
+          type="button"
+          class="primary-button"
+          [disabled]="procesandoId() !== null"
+          (click)="confirmarEnvioMantenimiento()"
+        >
+          {{ procesandoId() !== null ? 'Enviando…' : 'Sí, enviar' }}
+        </button>
+      </footer>
+      @if (mensajeError()) {
+        <p role="alert">{{ mensajeError() }}</p>
+      }
+    </section>
+  </div>
+}

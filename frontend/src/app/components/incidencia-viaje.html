@@ -1,0 +1,250 @@
+@if (servicio().estado === 'EN_CURSO' || servicio().incidencias?.length) {
+  <section class="averia-panel">
+    @if (activa(); as i) {
+      <header class="averia-heading">
+        <div>
+          <small>Atención de la unidad</small>
+          <h3>
+            {{
+              i.estado === 'LISTA_CONTINUAR' ? 'Reparación terminada' : 'Viaje detenido por avería'
+            }}
+          </h3>
+        </div>
+        <button type="button" class="secundario" [disabled]="ocupado()" (click)="refrescar()">
+          Actualizar atención
+        </button>
+      </header>
+      <p class="averia-estado" role="status">{{ nombre(i.estado) }}</p>
+      <dl class="averia-datos">
+        <div>
+          <dt>Avería reportada</dt>
+          <dd>{{ i.descripcion }}</dd>
+        </div>
+        <div>
+          <dt>Ubicación de referencia</dt>
+          <dd>{{ i.lugar }}</dd>
+        </div>
+        <div>
+          <dt>Fecha del reporte</dt>
+          <dd>{{ fecha(i.fechaReporte) }}</dd>
+        </div>
+        <div>
+          <dt>Atención vinculada</dt>
+          <dd>Mantenimiento #{{ i.mantenimientoId }}</dd>
+        </div>
+        @if (i.tecnico) {
+          <div>
+            <dt>Técnico o proveedor</dt>
+            <dd>{{ i.tecnico }}</dd>
+          </div>
+        }
+        @if (i.diagnostico) {
+          <div>
+            <dt>Trabajo e indicaciones registrados</dt>
+            <dd>{{ i.diagnostico }}</dd>
+          </div>
+        }
+      </dl>
+      @if (i.servicioAuxilioId) {
+        <p>Auxilio anterior #{{ i.servicioAuxilioId }}. Se conserva su historial.</p>
+      }
+      <div class="siguiente-paso">
+        <strong>Siguiente paso</strong>
+        <p>{{ siguientePaso(i.estado) }}</p>
+        @if (!modo()) {
+          <div class="acciones">
+            @if (puedeGestionar && ['REPORTADA', 'TECNICO_EN_CAMINO'].includes(i.estado)) {
+              <button type="button" [disabled]="ocupado()" (click)="elegir('REPARADA')">
+                Registrar reparación en ruta
+              </button>
+            }
+            @if (puedeGestionar) {
+              <button
+                type="button"
+                class="secundario"
+                [disabled]="ocupado()"
+                (click)="elegir('RETORNO_PLANTA')"
+              >
+                La unidad llegó a planta
+              </button>
+            }
+            @if ((chofer() || puedeGestionar) && i.estado === 'LISTA_CONTINUAR') {
+              <button type="button" [disabled]="ocupado()" (click)="elegir('CONTINUAR')">
+                {{ chofer() ? 'Reanudar mi viaje' : 'Confirmar reanudación del viaje' }}
+              </button>
+            }
+            @if (puedeGestionar && i.estado === 'REPORTADA') {
+              <button
+                type="button"
+                class="enlace"
+                [disabled]="ocupado()"
+                (click)="elegir('TECNICO')"
+              >
+                Registrar técnico (opcional)
+              </button>
+            }
+          </div>
+        }
+      </div>
+      <p class="ayuda">
+        No registres llegadas a paradas que no se realizaron. Puedes adjuntar una foto desde
+        Fotografías y documentos.
+      </p>
+    } @else if (
+      (chofer() || puedeGestionar) &&
+      servicio().estado === 'EN_CURSO' &&
+      !servicio().servicioAuxiliadoId
+    ) {
+      <button type="button" class="reportar" (click)="elegir('REPORTAR')">
+        Reportar avería del vehículo
+      </button>
+    }
+    @if (modo()) {
+      <form #atencion="ngForm" (ngSubmit)="enviar(modo())" [attr.aria-busy]="ocupado()">
+        @if (modo() === 'REPORTAR') {
+          <h3>¿Qué pasó con la unidad?</h3>
+          <label
+            >Describe la avería<textarea
+              name="descripcion"
+              [(ngModel)]="datos.descripcion"
+              maxlength="1000"
+              required
+              placeholder="Ejemplo: el motor se apagó y no enciende"
+            ></textarea></label
+          ><label
+            >¿Dónde te encuentras?<input
+              name="lugar"
+              [(ngModel)]="datos.lugar"
+              maxlength="150"
+              required
+              placeholder="Carretera, kilómetro o punto de referencia" /></label
+          ><button
+            type="button"
+            [disabled]="obteniendoGps()"
+            [attr.aria-busy]="obteniendoGps()"
+            (click)="ubicacion()"
+          >
+            {{
+              obteniendoGps()
+                ? 'Obteniendo ubicación…'
+                : latitud !== null
+                  ? 'Actualizar mi ubicación GPS'
+                  : 'Agregar mi ubicación GPS (opcional)'
+            }}</button
+          ><small role="status" aria-live="polite">
+            @if (obteniendoGps()) {
+              Buscando tu ubicación. Si el navegador lo solicita, permite el acceso al GPS.
+            } @else if (latitud !== null) {
+              Ubicación GPS agregada.
+            }
+          </small>
+          <p class="ayuda">
+            El reporte necesita conexión para que el coordinador lo reciba. Si no tienes señal,
+            comunícate por el medio disponible. La foto es opcional.
+          </p>
+        }
+        @if (modo() === 'CONTINUAR') {
+          <h3>Confirmar reanudación</h3>
+          <p>
+            La unidad retomará el recorrido pendiente y la atención vinculada se cerrará. Confirma
+            solo si la reparación terminó y la salida está coordinada.
+          </p>
+        }
+        @if (modo() === 'TECNICO') {
+          <h3>Atención técnica en ruta</h3>
+          <label
+            >Técnico o proveedor<input
+              name="tecnico"
+              [(ngModel)]="datos.tecnico"
+              required
+              maxlength="150"
+          /></label>
+        }
+        @if (modo() === 'REPARADA') {
+          <h3>Registrar reparación en ruta</h3>
+          <label
+            >Técnico o proveedor (opcional)<input
+              name="tecnicoReparacion"
+              [(ngModel)]="datos.tecnico"
+              maxlength="150" /></label
+          ><label
+            >Trabajo realizado y condición para continuar<textarea
+              name="diagnostico"
+              [(ngModel)]="datos.diagnostico"
+              required
+              maxlength="1500"
+            ></textarea>
+          </label>
+          <p class="ayuda">
+            El chofer confirmará la continuación. La atención quedará vinculada al mantenimiento de
+            esta unidad.
+          </p>
+        }
+        @if (modo() === 'RETORNO_PLANTA') {
+          <h3>Confirmar recepción en planta</h3>
+          <p>
+            Registra este paso únicamente cuando la unidad haya llegado físicamente. La orden de
+            rescate se coordina fuera del sistema.
+          </p>
+          <div class="resultado-retorno">
+            <span>Viaje <strong>Interrumpido por avería</strong></span
+            ><span>Unidad <strong>En mantenimiento</strong></span
+            ><span>Chofer <strong>Disponible</strong></span>
+          </div>
+          <label
+            >Observación del retorno (opcional)<textarea
+              name="observacionRetorno"
+              [(ngModel)]="datos.diagnostico"
+              maxlength="1500"
+              placeholder="Ejemplo: unidad recibida en planta para revisión"
+            ></textarea></label
+          ><label class="confirmar-recepcion"
+            ><input
+              type="checkbox"
+              name="recepcion"
+              [(ngModel)]="recepcionConfirmada"
+              required
+            />Confirmo que la unidad ya se encuentra en planta.</label
+          >
+          <p class="ayuda">
+            Las paradas no realizadas conservarán su registro pendiente. El mantenimiento continuará
+            abierto.
+          </p>
+        }
+        <div class="acciones">
+          <button type="button" class="secundario" [disabled]="ocupado()" (click)="modo.set('')">
+            Volver</button
+          ><button
+            type="submit"
+            [disabled]="
+              ocupado() || atencion.invalid || (modo() === 'RETORNO_PLANTA' && !recepcionConfirmada)
+            "
+          >
+            {{ ocupado() ? 'Guardando…' : etiquetaConfirmar() }}
+          </button>
+        </div>
+      </form>
+    }
+    @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+    }
+    @if (servicio().incidencias?.length) {
+      <details>
+        <summary>Historial de averías del viaje</summary>
+        @for (i of servicio().incidencias; track i.id) {
+          <article>
+            <b>{{ nombre(i.estado) }}</b>
+            <p>{{ i.descripcion }} · {{ i.lugar }}</p>
+            <small
+              >Reporte: {{ fecha(i.fechaReporte) }} · Resolución:
+              {{ fecha(i.fechaResolucion) }}</small
+            >
+            @if (i.historial) {
+              <p class="traza">{{ i.historial }}</p>
+            }
+          </article>
+        }
+      </details>
+    }
+  </section>
+}

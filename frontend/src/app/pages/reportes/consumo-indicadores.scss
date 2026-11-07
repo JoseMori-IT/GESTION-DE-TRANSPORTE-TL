@@ -1,0 +1,304 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+.consumo {
+  display: grid;
+  gap: 16px;
+}
+header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+h3 {
+  margin: 5px 0;
+  font-size: 21px;
+}
+h4 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+.sobre,
+.referencia,
+small {
+  font-size: 12px;
+  color: #626875;
+}
+.referencia {
+  padding: 7px 10px;
+  background: #edf3ff;
+  border-radius: 20px;
+  color: #0066cc;
+}
+.resumen-consumo {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.resumen-consumo article,
+.grafico-consumo {
+  border: 1px solid #e0e2e9;
+  border-radius: 16px;
+  background: white;
+  padding: 20px;
+  min-width: 0;
+}
+.resumen-consumo article {
+  display: grid;
+  gap: 10px;
+}
+.resumen-consumo strong {
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+}
+.resumen-consumo em {
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+}
+.resumen-consumo article > span {
+  font-size: 12px;
+  color: #626875;
+}
+.graficos-consumo {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.grafico-consumo > p {
+  font-size: 12px;
+  color: #626875;
+  margin: 0 0 20px;
+}
+.fila {
+  margin: 16px 0;
+  break-inside: avoid;
+}
+.etiquetas {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  margin-bottom: 7px;
+}
+.etiquetas span {
+  overflow-wrap: anywhere;
+}
+.etiquetas b {
+  white-space: nowrap;
+}
+.pista {
+  display: flex;
+  height: 12px;
+  background: #f0f3f8;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.pista > span {
+  height: 100%;
+}
+.odo {
+  background: #007aff;
+}
+.ruta {
+  background: #a8cafa;
+}
+.fila > small {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+}
+.leyenda {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  font-size: 11px;
+  color: #626875;
+}
+.leyenda > span {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.leyenda i {
+  width: 12px;
+  height: 8px;
+  border-radius: 2px;
+}
+.control {
+  display: grid;
+  gap: 6px;
+  background: #f5f7fb;
+  border: 1px solid #e3e7ee;
+  padding: 15px;
+  border-radius: 12px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.control span,
+.metodo {
+  color: #626875;
+}
+.metodo,
+details p {
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 0;
+}
+details {
+  font-size: 12px;
+}
+summary {
+  cursor: pointer;
+  color: #0066cc;
+  padding: 10px 0;
+}
+.tabla-consumo {
+  overflow: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 850px;
+}
+td,
+th {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7ed;
+  font-size: 12px;
+  vertical-align: top;
+}
+th {
+  background: #f7f8fb;
+}
+td small {
+  display: block;
+  margin-top: 5px;
+}
+.vacio {
+  padding: 20px 0;
+}
+@media (max-width: 800px) {
+  .resumen-consumo {
+    grid-template-columns: 1fr;
+  }
+  .graficos-consumo {
+    grid-template-columns: 1fr;
+  }
+}
+@media print {
+  header {
+    flex-wrap: nowrap;
+  }
+  h3 {
+    font-size: 13pt;
+  }
+  .sobre,
+  .referencia,
+  small {
+    font-size: 8pt;
+  }
+  .resumen-consumo {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3mm;
+  }
+  .resumen-consumo article,
+  .grafico-consumo {
+    padding: 3mm;
+    border-radius: 2mm;
+    break-inside: avoid;
+  }
+  .resumen-consumo strong {
+    font-size: 16pt;
+  }
+  .resumen-consumo em {
+    font-size: 9pt;
+  }
+  .resumen-consumo article > span {
+    font-size: 8pt;
+  }
+  .graficos-consumo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4mm;
+  }
+  h4 {
+    font-size: 10pt;
+  }
+  .grafico-consumo > p,
+  .etiquetas,
+  .control,
+  .metodo {
+    font-size: 8pt;
+  }
+  .fila {
+    margin: 3mm 0;
+  }
+  .fila > small {
+    font-size: 7pt;
+  }
+  .pista {
+    height: 2.5mm;
+  }
+  .control {
+    padding: 3mm;
+  }
+  .consumo {
+    gap: 3mm;
+  }
+  .referencia {
+    border: 1px solid #d2e3fa;
+    background: white;
+  }
+  .leyenda {
+    font-size: 7pt;
+    gap: 3mm;
+  }
+  details {
+    display: none;
+  }
+  .odo,
+  .ruta {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+@media print {
+  .fila {
+    margin: 1.6mm 0;
+  }
+  .fila > small {
+    font-size: 6.5pt;
+  }
+  .etiquetas {
+    font-size: 7.5pt;
+  }
+  .pista {
+    height: 2mm;
+  }
+}
+
+@media print {
+  .mensual.anual .meses {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 4mm;
+  }
+  .control {
+    break-inside: avoid;
+  }
+  .mensual.anual .fila > small {
+    font-size: 6pt;
+  }
+}
+
+@media print {
+  .consumo {
+    gap: 2mm;
+  }
+}

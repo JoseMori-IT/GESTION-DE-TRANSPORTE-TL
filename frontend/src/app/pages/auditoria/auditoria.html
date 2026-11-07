@@ -1,0 +1,384 @@
+<div class="audit-page">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">
+        <img src="assets/branding/logopalmas.webp" alt="Grupo Palmas" />
+      </div>
+
+      <span>Gestión de Transporte</span>
+    </div>
+
+    <nav>
+      <button type="button" class="nav-item" (click)="volverDashboard()">
+        <span>Resumen</span>
+      </button>
+
+      <button type="button" class="nav-item" (click)="irPersonalAdministrativo()">
+        <span>Personal administrativo</span>
+      </button>
+
+      <button type="button" class="nav-item active">
+        <span>Auditoría</span>
+      </button>
+    </nav>
+
+    <button type="button" class="logout-button" (click)="cerrarSesion()">Cerrar sesión</button>
+  </aside>
+
+  <main class="content">
+    <header class="page-header">
+      <div>
+        <p>Control y trazabilidad</p>
+        <h1>Auditoría de accesos</h1>
+
+        <span> Consulta los inicios y cierres de sesión de administrativos y choferes. </span>
+      </div>
+
+      <button
+        type="button"
+        class="refresh-button"
+        [disabled]="cargando()"
+        (click)="cargarRegistros(paginaActual())"
+      >
+        Actualizar
+      </button>
+    </header>
+
+    @if (mensajeError()) {
+      <div class="message error">
+        {{ mensajeError() }}
+      </div>
+    }
+
+    <section class="summary-grid">
+      <article class="summary-card">
+        <small>Registros encontrados</small>
+        <strong>{{ totalRegistros() }}</strong>
+        <span>Según los filtros aplicados</span>
+      </article>
+
+      <article class="summary-card">
+        <small>Página actual</small>
+        <strong>
+          {{ totalPaginas() === 0 ? 0 : paginaActual() + 1 }}
+        </strong>
+        <span> De {{ totalPaginas() }} página(s) </span>
+      </article>
+
+      <article class="summary-card trace-card">
+        <small>Trazabilidad</small>
+        <strong>Activa</strong>
+        <span>Historial protegido y consultable</span>
+      </article>
+    </section>
+
+    <section class="filter-panel">
+      <div class="section-heading">
+        <div>
+          <p>Filtros</p>
+          <h2>Consultar accesos</h2>
+        </div>
+
+        <button type="button" class="clear-button" (click)="limpiarFiltros()">
+          Limpiar filtros
+        </button>
+      </div>
+
+      <form class="filters" [formGroup]="filtros" (ngSubmit)="aplicarFiltros()">
+        <label class="field search-field">
+          <span>Búsqueda general</span>
+
+          <input
+            type="search"
+            formControlName="texto"
+            placeholder="Nombre, usuario o detalle del acceso"
+          />
+        </label>
+
+        <label class="field">
+          <span>Correo del usuario</span>
+
+          <input type="email" formControlName="usuarioCorreo" placeholder="usuario@empresa.com" />
+        </label>
+
+        <label class="field">
+          <span>Acción</span>
+
+          <select formControlName="accion">
+            <option value="">Todas</option>
+            <option value="INICIAR_SESION">Inicio de sesión</option>
+            <option value="CERRAR_SESION">Cierre de sesión</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Resultado</span>
+
+          <select formControlName="resultado">
+            <option value="">Todos</option>
+            <option value="EXITOSO">Exitoso</option>
+            <option value="RECHAZADO">Acceso rechazado</option>
+            <option value="ERROR">Error</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Desde</span>
+
+          <input type="date" formControlName="fechaDesde" />
+        </label>
+
+        <label class="field">
+          <span>Hasta</span>
+
+          <input type="date" formControlName="fechaHasta" />
+        </label>
+
+        <button type="submit" class="primary-button" [disabled]="cargando()">
+          Aplicar filtros
+        </button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading table-heading">
+        <div>
+          <p>Historial</p>
+          <h2>Accesos registrados</h2>
+        </div>
+
+        <span class="result-counter"> {{ totalRegistros() }} resultado(s) </span>
+      </div>
+
+      @if (cargando()) {
+        <div class="loading-state">
+          <span class="loader"></span>
+          <p>Cargando registros de auditoría...</p>
+        </div>
+      } @else if (registros().length === 0) {
+        <div class="empty-state">
+          <h3>No se encontraron accesos</h3>
+
+          <p>Modifica los filtros para ampliar la consulta.</p>
+        </div>
+      } @else {
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha y hora</th>
+                <th>Usuario</th>
+                <th>Acción</th>
+                <th>Dirección IP</th>
+                <th>Resultado</th>
+                <th>Detalle</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (registro of registros(); track registro.id) {
+                <tr>
+                  <td data-label="Fecha y hora">
+                    <strong class="date-text">
+                      {{ formatearFecha(registro.fechaRegistro) }}
+                    </strong>
+                  </td>
+
+                  <td data-label="Usuario">
+                    <div class="user-cell">
+                      <strong>
+                        {{ registro.usuarioNombre }}
+                      </strong>
+
+                      <small>
+                        {{ registro.usuarioCorreo || 'Sin correo' }}
+                      </small>
+
+                      <span>
+                        {{ registro.usuarioRol || 'Sin rol' }}
+                      </span>
+                    </div>
+                  </td>
+
+                  <td data-label="Acción">
+                    <span class="action-badge">
+                      {{
+                        registro.accion === 'INICIAR_SESION'
+                          ? 'Inicio de sesión'
+                          : 'Cierre de sesión'
+                      }}
+                    </span>
+                  </td>
+
+                  <td data-label="Dirección IP">
+                    {{ registro.direccionIp || 'No registrada' }}
+                  </td>
+
+                  <td data-label="Resultado">
+                    <span
+                      class="result-badge"
+                      [class.success]="registro.resultado === 'EXITOSO'"
+                      [class.failed]="registro.resultado !== 'EXITOSO'"
+                    >
+                      {{ registro.resultado }}
+                    </span>
+                  </td>
+
+                  <td data-label="Detalle">
+                    <button type="button" class="detail-button" (click)="abrirDetalle(registro)">
+                      Ver detalle
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <footer class="pagination">
+          <span>
+            Página
+            {{ totalPaginas() === 0 ? 0 : paginaActual() + 1 }}
+            de {{ totalPaginas() }}
+          </span>
+
+          <div>
+            <button
+              type="button"
+              [disabled]="!puedeRetroceder() || cargando()"
+              (click)="paginaAnterior()"
+            >
+              ← Anterior
+            </button>
+
+            <button
+              type="button"
+              [disabled]="!puedeAvanzar() || cargando()"
+              (click)="paginaSiguiente()"
+            >
+              Siguiente →
+            </button>
+          </div>
+        </footer>
+      }
+    </section>
+  </main>
+</div>
+
+@if (mostrarDetalle() && registroSeleccionado(); as registro) {
+  <div class="modal-backdrop" (click)="cerrarDetalle()">
+    <section class="detail-modal" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div>
+          <p>Registro #{{ registro.id }}</p>
+          <h2>Detalle de auditoría</h2>
+        </div>
+
+        <button type="button" class="close-button" (click)="cerrarDetalle()">×</button>
+      </header>
+
+      <div class="modal-content">
+        <section class="detail-grid">
+          <article>
+            <small>Fecha y hora</small>
+            <strong>
+              {{ formatearFecha(registro.fechaRegistro) }}
+            </strong>
+          </article>
+
+          <article>
+            <small>Resultado</small>
+
+            <strong>
+              {{ registro.resultado }}
+            </strong>
+          </article>
+
+          <article>
+            <small>Usuario</small>
+            <strong>
+              {{ registro.usuarioNombre }}
+            </strong>
+            <span>
+              {{ registro.usuarioCorreo || '—' }}
+            </span>
+          </article>
+
+          <article>
+            <small>Rol</small>
+            <strong>
+              {{ registro.usuarioRol || '—' }}
+            </strong>
+          </article>
+
+          <article>
+            <small>Acción</small>
+            <strong>{{ registro.accion }}</strong>
+          </article>
+
+          <article>
+            <small>Módulo</small>
+            <strong>
+              {{ nombreModulo(registro.modulo) }}
+            </strong>
+          </article>
+
+          <article>
+            <small>Entidad</small>
+            <strong>
+              {{ registro.entidad || '—' }}
+            </strong>
+          </article>
+
+          <article>
+            <small>Referencia</small>
+            <strong>
+              {{ registro.codigoReferencia || registro.entidadId || '—' }}
+            </strong>
+          </article>
+
+          <article>
+            <small>Dirección IP</small>
+            <strong>
+              {{ registro.direccionIp || '—' }}
+            </strong>
+          </article>
+        </section>
+
+        <section class="detail-section">
+          <small>Descripción del movimiento</small>
+
+          <p>
+            {{ registro.detalle || 'Sin descripción adicional.' }}
+          </p>
+        </section>
+
+        <section class="comparison">
+          <article>
+            <small>Valor anterior</small>
+
+            <pre>{{ formatearJson(registro.valorAnterior) }}</pre>
+          </article>
+
+          <article>
+            <small>Valor nuevo</small>
+
+            <pre>{{ formatearJson(registro.valorNuevo) }}</pre>
+          </article>
+        </section>
+
+        <section class="technical-detail">
+          <small>Navegador o dispositivo</small>
+
+          <p>
+            {{ registro.userAgent || 'No identificado' }}
+          </p>
+        </section>
+      </div>
+
+      <footer class="modal-actions">
+        <button type="button" class="close-detail-button" (click)="cerrarDetalle()">Cerrar</button>
+      </footer>
+    </section>
+  </div>
+}

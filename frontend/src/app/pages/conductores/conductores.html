@@ -1,0 +1,457 @@
+<div class="page">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark company-logo">
+        <img src="assets/branding/logopalmas.webp" alt="Grupo Palmas" />
+      </span>
+
+      <div>
+        <strong>Grupo Palmas</strong>
+        <small>Gestión de Transporte</small>
+      </div>
+    </div>
+
+    <nav>
+      <button class="nav-item" (click)="volverDashboard()">Resumen</button>
+
+      <button class="nav-item" (click)="irVehiculos()">Vehículos</button>
+
+      <button class="nav-item active">Conductores</button>
+    </nav>
+
+    <button class="logout" (click)="cerrarSesion()">Cerrar sesión</button>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div>
+        <p>Administración de personal</p>
+        <h1>Conductores</h1>
+        <span> Consulta y administra los conductores registrados. </span>
+      </div>
+
+      <button class="primary-button" (click)="abrirFormulario()">+ Nuevo conductor</button>
+    </header>
+
+    @if (mensajeExito()) {
+      <div class="notification success">
+        {{ mensajeExito() }}
+      </div>
+    }
+
+    @if (mensajeError() && !mostrarFormulario()) {
+      <div class="notification error" role="alert">{{ mensajeError() }}</div>
+    }
+
+    <section class="summary">
+      <article>
+        <small>Total registrados</small>
+        <strong>{{ conductores().length }}</strong>
+      </article>
+
+      <article>
+        <small>Disponibles</small>
+        <strong>
+          {{ conductores().filter((conductor) => conductor.estado === 'DISPONIBLE').length }}
+        </strong>
+      </article>
+    </section>
+
+    <section class="table-panel">
+      @if (cargando()) {
+        <div class="state-message">
+          <div class="loader"></div>
+          <p>Cargando conductores...</p>
+        </div>
+      } @else if (errorCarga()) {
+        <div class="state-message error">
+          <p>{{ errorCarga() }}</p>
+
+          <button (click)="cargarConductores()">Volver a intentar</button>
+        </div>
+      } @else if (conductores().length === 0) {
+        <div class="state-message">
+          <h2>No existen conductores registrados</h2>
+          <p>Registra al primer conductor.</p>
+        </div>
+      } @else {
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>DNI</th>
+                <th>Conductor</th>
+                <th>Teléfono</th>
+                <th>Licencia</th>
+                <th>Categoría</th>
+                <th>Vencimiento</th>
+                <th>Estado</th>
+                @if (puedeAdministrarCuentas) {
+                  <th>Acceso al sistema</th>
+                }
+                <th>Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (conductor of conductores(); track conductor.id) {
+                <tr>
+                  <td>
+                    <strong>
+                      {{ conductor.dni || 'Sin DNI' }}
+                    </strong>
+                  </td>
+
+                  <td>
+                    <div class="person">
+                      <span class="person-avatar">
+                        {{ conductor.nombres ? conductor.nombres.charAt(0) : '?' }}
+                      </span>
+
+                      <div>
+                        <strong>
+                          {{ conductor.nombres || 'Sin nombres' }}
+                          {{ conductor.apellidos || '' }}
+                        </strong>
+
+                        <small>
+                          {{ conductor.correo || 'Sin correo' }}
+                        </small>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td>
+                    {{ conductor.telefono || '—' }}
+                  </td>
+
+                  <td>
+                    <span class="license">
+                      {{ conductor.numeroLicencia || 'Sin licencia' }}
+                    </span>
+                  </td>
+
+                  <td>
+                    {{ conductor.categoriaLicencia || '—' }}
+                  </td>
+
+                  <td>
+                    @if (conductor.vencimientoLicencia) {
+                      {{ conductor.vencimientoLicencia | date: 'dd/MM/yyyy' }}
+                    } @else {
+                      —
+                    }
+                  </td>
+
+                  <td>
+                    @switch (conductor.estado) {
+                      @case ('DISPONIBLE') {
+                        <span class="status disponible"> Disponible </span>
+                      }
+
+                      @case ('EN_SERVICIO') {
+                        <span class="status servicio"> En servicio </span>
+                      }
+
+                      @case ('SUSPENDIDO') {
+                        <span class="status suspendido"> Suspendido </span>
+                      }
+
+                      @case ('INACTIVO') {
+                        <span class="status inactivo"> Inactivo </span>
+                      }
+
+                      @default {
+                        <span class="status"> Sin estado </span>
+                      }
+                    }
+                  </td>
+
+                  @if (puedeAdministrarCuentas) {
+                    <td>
+                      @if (cargandoCuentas()) {
+                        <span>Verificando cuenta...</span>
+                      } @else if (errorCuentas()) {
+                        <span>{{ errorCuentas() }}</span>
+                        <button type="button" class="action-button" (click)="cargarCuentas()">
+                          Volver a verificar
+                        </button>
+                      } @else if (cuentaDe(conductor.id); as cuenta) {
+                        <div class="account-status">
+                          <span
+                            class="status"
+                            [class.disponible]="cuenta.activo"
+                            [class.inactivo]="!cuenta.activo"
+                          >
+                            {{ cuenta.activo ? 'Cuenta activa' : 'Cuenta inactiva' }}
+                          </span>
+
+                          @if (cuenta.activo) {
+                            <button
+                              type="button"
+                              class="action-button"
+                              [disabled]="procesandoCuentaId() !== null"
+                              (click)="restablecerAcceso(cuenta, conductor.id)"
+                            >
+                              Restablecer contraseña
+                            </button>
+                          }
+                        </div>
+                      } @else {
+                        <button
+                          type="button"
+                          class="action-button"
+                          [disabled]="
+                            procesandoCuentaId() !== null || conductor.estado === 'INACTIVO'
+                          "
+                          (click)="crearAcceso(conductor)"
+                        >
+                          {{
+                            procesandoCuentaId() === conductor.id ? 'Creando...' : 'Crear cuenta'
+                          }}
+                        </button>
+                      }
+                    </td>
+                  }
+
+                  <td>
+                    <div class="row-actions">
+                      <button
+                        type="button"
+                        class="action-button"
+                        (click)="editarConductor(conductor)"
+                      >
+                        Editar
+                      </button>
+
+                      @if (conductor.estado === 'INACTIVO') {
+                        <button type="button" class="deactivate-button" disabled>Inactivo</button>
+                      } @else {
+                        <button
+                          type="button"
+                          class="deactivate-button"
+                          (click)="desactivarConductor(conductor)"
+                        >
+                          Desactivar
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  </main>
+</div>
+
+@if (mostrarFormulario()) {
+  <div class="modal-backdrop">
+    <section class="modal">
+      <header class="modal-header">
+        <div>
+          <p>Administración de personal</p>
+
+          <h2>
+            {{ conductorEditandoId() === null ? 'Registrar conductor' : 'Editar conductor' }}
+          </h2>
+        </div>
+
+        <button type="button" class="close-button" (click)="cerrarFormulario()">×</button>
+      </header>
+
+      <form [formGroup]="conductorForm" (ngSubmit)="guardarConductor()">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="dni">DNI</label>
+            <input
+              id="dni"
+              type="text"
+              inputmode="numeric"
+              appSoloDigitos
+              [limiteDigitos]="8"
+              formControlName="dni"
+              maxlength="8"
+              placeholder="Digita tu DNI"
+            />
+            @if (errorCampo('dni')) {
+              <small class="field-error" role="alert">{{ errorCampo('dni') }}</small>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="telefono">Teléfono</label>
+            <input
+              id="telefono"
+              type="text"
+              formControlName="telefono"
+              maxlength="9"
+              placeholder="Coloca tu número"
+            />
+            @if (errorCampo('telefono')) {
+              <small class="field-error" role="alert">{{ errorCampo('telefono') }}</small>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="nombres">Nombres</label>
+            <input id="nombres" type="text" formControlName="nombres" placeholder="" />
+            @if (errorCampo('nombres')) {
+              <small class="field-error" role="alert">{{ errorCampo('nombres') }}</small>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="apellidos">Apellidos</label>
+            <input id="apellidos" type="text" formControlName="apellidos" placeholder="" />
+            @if (errorCampo('apellidos')) {
+              <small class="field-error" role="alert">{{ errorCampo('apellidos') }}</small>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="correo">Correo opcional</label>
+            <input
+              id="correo"
+              type="email"
+              formControlName="correo"
+              placeholder="conductor@gmail.com"
+            />
+            @if (errorCampo('correo')) {
+              <small class="field-error" role="alert">{{ errorCampo('correo') }}</small>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="numeroLicencia"> Número de licencia </label>
+            <input
+              id="numeroLicencia"
+              type="text"
+              formControlName="numeroLicencia"
+              placeholder=""
+            />
+            @if (errorCampo('numeroLicencia')) {
+              <small class="field-error" role="alert">{{ errorCampo('numeroLicencia') }}</small>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="categoriaLicencia"> Categoría </label>
+            <select id="categoriaLicencia" formControlName="categoriaLicencia">
+              <option value="A_I">A-I</option>
+              <option value="A_IIA">A-IIa</option>
+              <option value="A_IIB">A-IIb</option>
+              <option value="A_IIIA">A-IIIa</option>
+              <option value="A_IIIB">A-IIIb</option>
+              <option value="A_IIIC">A-IIIc</option>
+            </select>
+            @if (errorCampo('categoriaLicencia')) {
+              <small class="field-error" role="alert">{{ errorCampo('categoriaLicencia') }}</small>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="vencimientoLicencia"> Vencimiento de licencia </label>
+            <input id="vencimientoLicencia" type="date" formControlName="vencimientoLicencia" />
+            @if (errorCampo('vencimientoLicencia')) {
+              <small class="field-error" role="alert">{{
+                errorCampo('vencimientoLicencia')
+              }}</small>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="estado">Estado</label>
+            <select id="estado" formControlName="estado">
+              <option value="DISPONIBLE">Disponible</option>
+              <option value="EN_SERVICIO">En servicio</option>
+              <option value="SUSPENDIDO">Suspendido</option>
+              <option value="INACTIVO">Inactivo</option>
+            </select>
+            @if (errorCampo('estado')) {
+              <small class="field-error" role="alert">{{ errorCampo('estado') }}</small>
+            }
+          </div>
+
+          @if (conductorEditandoId() === null && puedeAdministrarCuentas) {
+            <label class="form-field account-option">
+              <span>Acceso al sistema</span>
+
+              <span class="checkbox-row">
+                <input type="checkbox" formControlName="crearCuenta" />
+                Crear cuenta del chofer con contraseña temporal
+              </span>
+
+              <small>
+                El DNI será su usuario y deberá cambiar la contraseña en el primer ingreso.
+              </small>
+            </label>
+          }
+        </div>
+
+        @if (mensajeError()) {
+          <div class="form-message error">
+            {{ mensajeError() }}
+          </div>
+        }
+
+        <footer class="modal-actions">
+          <button type="button" class="secondary-button" (click)="cerrarFormulario()">
+            Cancelar
+          </button>
+
+          <button type="submit" class="primary-button" [disabled]="guardando()">
+            {{
+              guardando()
+                ? 'Guardando...'
+                : conductorEditandoId() === null
+                  ? 'Registrar conductor'
+                  : 'Guardar cambios'
+            }}
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
+
+@if (accesoTemporal(); as acceso) {
+  <div class="modal-backdrop">
+    <section
+      class="modal access-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="access-title"
+    >
+      <header class="modal-header">
+        <div>
+          <p>Credenciales del chofer</p>
+          <h2 id="access-title">Acceso temporal generado</h2>
+        </div>
+      </header>
+
+      <div class="temporary-access">
+        <p>
+          Entrega estas credenciales directamente al chofer. La contraseña solo se mostrará esta
+          vez.
+        </p>
+
+        <label>Usuario</label>
+        <strong>{{ acceso.identificador }}</strong>
+
+        <label>Contraseña temporal</label>
+        <code>{{ acceso.contrasenaTemporal }}</code>
+
+        <small> Vence: {{ acceso.venceEn | date: 'dd/MM/yyyy HH:mm' }} </small>
+      </div>
+
+      <footer class="modal-actions">
+        <button type="button" class="primary-button" (click)="cerrarAccesoTemporal()">
+          Entendido, cerrar
+        </button>
+      </footer>
+    </section>
+  </div>
+}

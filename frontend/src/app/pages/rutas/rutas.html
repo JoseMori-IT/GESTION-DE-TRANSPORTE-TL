@@ -1,0 +1,523 @@
+<div class="page">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark company-logo">
+        <img src="assets/branding/logopalmas.webp" alt="Grupo Palmas" />
+      </span>
+
+      <div>
+        <strong>Grupo Palmas</strong>
+        <small>Gestión de Transporte</small>
+      </div>
+    </div>
+
+    <nav>
+      <button class="nav-item" (click)="volverDashboard()">Resumen</button>
+
+      <button class="nav-item" (click)="irVehiculos()">Vehículos</button>
+
+      <button class="nav-item" (click)="irConductores()">Conductores</button>
+
+      <button class="nav-item active">Rutas</button>
+    </nav>
+
+    <button class="logout" (click)="cerrarSesion()">Cerrar sesión</button>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div>
+        <p>Planificación del transporte</p>
+        <h1>Rutas</h1>
+        <span> Consulta y administra las rutas disponibles. </span>
+      </div>
+
+      <div class="topbar-actions">
+        <button class="secondary-button" (click)="abrirUbicacion()">+ Nueva ubicación</button>
+        <button class="primary-button" (click)="abrirFormulario()">+ Nueva ruta</button>
+      </div>
+    </header>
+
+    @if (mensajeExito()) {
+      <div class="notification success">
+        {{ mensajeExito() }}
+      </div>
+    }
+
+    <section class="summary">
+      <article>
+        <small>Total registradas</small>
+        <strong>{{ rutas().length }}</strong>
+      </article>
+
+      <article>
+        <small>Rutas activas</small>
+        <strong>
+          {{ rutas().filter((ruta) => ruta.estado === 'ACTIVA').length }}
+        </strong>
+      </article>
+    </section>
+
+    @if (errorCarga() && rutas().length) {
+      <div class="notification error" role="alert">
+        {{ errorCarga() }} Se conserva el último listado.<button
+          type="button"
+          class="primary-button"
+          (click)="cargarRutas()"
+        >
+          Volver a intentar
+        </button>
+      </div>
+    }
+    @if (mensajeError() && !mostrarFormulario() && !mostrarFormularioUbicacion()) {
+      <div class="notification error" role="alert">{{ mensajeError() }}</div>
+    }
+    <section class="table-panel">
+      @if (cargando()) {
+        <div class="state-message">
+          <div class="loader"></div>
+          <p>Cargando rutas...</p>
+        </div>
+      } @else if (errorCarga() && rutas().length === 0) {
+        <div class="state-message error">
+          <p>{{ errorCarga() }}</p>
+
+          <button type="button" class="primary-button" (click)="cargarRutas()">
+            Volver a intentar
+          </button>
+        </div>
+      } @else if (rutas().length === 0) {
+        <div class="state-message">
+          <h2>No existen rutas registradas</h2>
+          <p>Registra la primera ruta de transporte.</p>
+        </div>
+      } @else {
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Recorrido</th>
+                <th>Distancia</th>
+                <th>Duración</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (ruta of rutas(); track ruta.id) {
+                <tr>
+                  <td>
+                    <span class="route-code">
+                      {{ ruta.codigo }}
+                    </span>
+                  </td>
+
+                  <td>
+                    <strong>{{ ruta.nombre }}</strong>
+                  </td>
+
+                  <td>
+                    <div class="route-path">
+                      <span>{{ ruta.origenUbicacion?.nombre || ruta.origen }}</span>
+                      <b>→</b>
+                      <span>{{ ruta.destinoUbicacion?.nombre || ruta.destino }}</span>
+                    </div>
+                  </td>
+
+                  <td>{{ ruta.distanciaKm }} km</td>
+
+                  <td>{{ ruta.duracionEstimadaMinutos }} min</td>
+
+                  <td>
+                    <span
+                      class="status"
+                      [class.disponible]="ruta.estado === 'ACTIVA'"
+                      [class.inactivo]="ruta.estado === 'INACTIVA'"
+                    >
+                      {{ ruta.estado }}
+                    </span>
+                  </td>
+
+                  <td>
+                    <div class="row-actions">
+                      <button class="action-button" (click)="editarRuta(ruta)">Editar</button>
+
+                      <button
+                        class="deactivate-button"
+                        [disabled]="ruta.estado === 'INACTIVA'"
+                        (click)="desactivarRuta(ruta)"
+                      >
+                        {{ ruta.estado === 'INACTIVA' ? 'Inactiva' : 'Desactivar' }}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    <section class="catalog-panel">
+      <header class="section-header">
+        <div>
+          <p>Catálogo operativo</p>
+          <h2>Ubicaciones estandarizadas</h2>
+        </div>
+        <span>{{ ubicaciones().length }} registradas</span>
+      </header>
+      <div class="location-grid">
+        @for (ubicacion of ubicaciones(); track ubicacion.id) {
+          <article class="location-card">
+            <div>
+              <span class="location-type">{{ ubicacion.tipo }}</span>
+              <h3>{{ ubicacion.nombre }}</h3>
+              <small>{{ ubicacion.codigo }}</small>
+            </div>
+            <p>
+              @if (ubicacion.latitud !== null) {
+                {{ ubicacion.latitud }}, {{ ubicacion.longitud }}
+              } @else {
+                Coordenadas pendientes
+              }
+            </p>
+            <button type="button" (click)="abrirUbicacion(ubicacion)">Editar</button>
+          </article>
+        }
+      </div>
+    </section>
+  </main>
+</div>
+
+@if (mostrarFormulario()) {
+  <div class="modal-backdrop">
+    <section class="modal">
+      <header class="modal-header">
+        <div>
+          <p>Planificación del transporte</p>
+
+          <h2>
+            {{ rutaEditandoId() === null ? 'Registrar ruta' : 'Editar ruta' }}
+          </h2>
+        </div>
+
+        <button type="button" class="close-button" (click)="cerrarFormulario()">×</button>
+      </header>
+
+      <form [formGroup]="rutaForm" (ngSubmit)="guardarRuta()">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="codigo">Código</label>
+            <input
+              id="codigo"
+              type="text"
+              formControlName="codigo"
+              placeholder="Se asigna automáticamente al guardar"
+              readonly
+              aria-describedby="codigo-ayuda"
+            /><small id="codigo-ayuda">Código único generado por el sistema.</small>
+          </div>
+
+          <div class="form-field">
+            <label for="nombre">Nombre de la ruta</label>
+            <input
+              id="nombre"
+              type="text"
+              formControlName="nombre"
+              placeholder="Pucallpa - Tulumayo"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="origenUbicacionId">Ubicación de origen</label>
+            <select
+              id="origenUbicacionId"
+              formControlName="origenUbicacionId"
+              (change)="recalcularDistanciaReferencia()"
+            >
+              <option [ngValue]="0">Selecciona el origen</option>
+              @for (u of ubicaciones(); track u.id) {
+                @if (u.estado === 'ACTIVA') {
+                  <option [ngValue]="u.id">{{ u.nombre }}</option>
+                }
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="destinoUbicacionId">Ubicación de destino</label>
+            <select
+              id="destinoUbicacionId"
+              formControlName="destinoUbicacionId"
+              (change)="recalcularDistanciaReferencia()"
+            >
+              <option [ngValue]="0">Selecciona el destino</option>
+              @for (u of ubicaciones(); track u.id) {
+                @if (u.estado === 'ACTIVA') {
+                  <option [ngValue]="u.id">{{ u.nombre }}</option>
+                }
+              }
+            </select>
+          </div>
+
+          <div class="form-field full-width">
+            <label>Vista previa de la ruta</label>
+            <app-mapa-ubicacion [puntos]="puntosRuta" [recorrido]="trayectoriaVial()" />
+            <small class="field-help"
+              >A: origen · B: destino.
+              {{
+                trayectoriaVial().length
+                  ? 'La línea continua muestra el camino calculado.'
+                  : 'La línea punteada es una referencia; usa Calcular por carretera para obtener el recorrido vial.'
+              }}</small
+            >
+            @if (puntosRuta.length < 2) {
+              <small class="field-help"
+                >Selecciona origen y destino con coordenadas. Puedes completarlas desde Editar en el
+                catálogo de ubicaciones.</small
+              >
+            }
+          </div>
+          <div class="form-field full-width">
+            <label for="modoDistancia">Cómo definir la distancia</label>
+            <select
+              id="modoDistancia"
+              #modo
+              [value]="modoDistancia()"
+              (change)="cambiarModoDistancia(modo.value)"
+            >
+              <option value="CARRETERA">Calcular recorrido por carretera</option>
+              <option value="GPS">Referencia GPS en línea recta</option>
+              <option value="MANUAL">Ingresar kilómetros del camino manualmente</option>
+            </select>
+            @if (modoDistancia() === 'CARRETERA') {
+              <button
+                type="button"
+                class="secondary-button"
+                (click)="calcularPorCarretera()"
+                [disabled]="calculandoRecorrido() || puntosRuta.length !== 2"
+              >
+                {{ calculandoRecorrido() ? 'Calculando recorrido...' : 'Calcular por carretera' }}
+              </button>
+              <small class="field-help"
+                >Obtiene kilómetros y minutos aproximados siguiendo caminos registrados. La duración
+                es una referencia para automóvil; ajústala para tu operación.</small
+              >
+            }
+            @if (mensajeRecorrido()) {
+              <small class="field-help" role="status">{{ mensajeRecorrido() }}</small>
+            }
+            <small class="field-help"
+              >Rutas:
+              <a href="https://project-osrm.org/" target="_blank" rel="noopener noreferrer">OSRM</a>
+              / FOSSGIS · datos de OpenStreetMap ·
+              <a
+                href="https://www.openstreetmap.org/fixthemap"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Corregir el mapa</a
+              ></small
+            >
+            <small class="field-help"
+              >Si el camino no aparece en el mapa o conoces su longitud, selecciona el ingreso
+              manual. Puedes guardar la ruta con los kilómetros que ingreses.</small
+            >
+          </div>
+          <div class="form-field">
+            <label for="distanciaKm">Distancia de la ruta (km)</label>
+            <input
+              id="distanciaKm"
+              type="number"
+              min="0.01"
+              step="0.01"
+              formControlName="distanciaKm"
+              placeholder="Ej.: 45.50"
+              (input)="usarDistanciaManual()"
+            />
+            @if (modoDistancia() === 'GPS') {
+              <small class="field-help"
+                >Estimación automática entre las coordenadas. El camino real puede ser más largo;
+                ajusta los kilómetros si es necesario.</small
+              >
+              @if (distanciaGeografica() === null) {
+                <small class="field-help"
+                  >Completa las coordenadas de origen y destino o ingresa los kilómetros
+                  manualmente.</small
+                >
+              }
+            } @else if (modoDistancia() === 'MANUAL') {
+              <small class="field-help"
+                >Se guardarán los kilómetros ingresados. Cambiar origen o destino no reemplazará
+                este valor; revísalo antes de guardar.</small
+              >
+            }
+            @if (distanciaGeografica() !== null) {
+              <small class="field-help"
+                >Referencia GPS en línea recta: {{ distanciaGeografica() }} km. No incluye curvas,
+                desvíos ni condiciones del camino.</small
+              >
+            }
+            @if (rutaForm.controls.distanciaKm.touched && rutaForm.controls.distanciaKm.invalid) {
+              <small class="field-help">Ingresa una distancia de al menos 0.01 km.</small>
+            }
+          </div>
+          <div class="form-field">
+            <label for="duracionEstimadaMinutos"> Duración estimada (minutos) </label>
+            <input
+              id="duracionEstimadaMinutos"
+              type="number"
+              formControlName="duracionEstimadaMinutos"
+              (input)="usarDistanciaManual()"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="estado">Estado</label>
+            <select id="estado" formControlName="estado">
+              <option value="ACTIVA">Activa</option>
+              <option value="INACTIVA">Inactiva</option>
+            </select>
+          </div>
+
+          <div class="form-field full-width">
+            <label for="observaciones">Observaciones</label>
+            <textarea
+              id="observaciones"
+              rows="4"
+              maxlength="500"
+              formControlName="observaciones"
+              placeholder="Información adicional de la ruta"
+            ></textarea>
+          </div>
+        </div>
+
+        @if (mensajeError()) {
+          <div class="form-message error">
+            {{ mensajeError() }}
+          </div>
+        }
+
+        <footer class="modal-actions">
+          <button type="button" class="secondary-button" (click)="cerrarFormulario()">
+            Cancelar
+          </button>
+
+          <button
+            type="submit"
+            class="primary-button"
+            [disabled]="guardando() || calculandoRecorrido()"
+          >
+            {{
+              guardando()
+                ? 'Guardando...'
+                : rutaEditandoId() === null
+                  ? 'Registrar ruta'
+                  : 'Guardar cambios'
+            }}
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
+
+@if (mostrarFormularioUbicacion()) {
+  <div class="modal-backdrop">
+    <section class="modal location-modal">
+      <header class="modal-header">
+        <div>
+          <p>Catálogo georreferenciado</p>
+          <h2>{{ ubicacionEditandoId() === null ? 'Registrar ubicación' : 'Editar ubicación' }}</h2>
+        </div>
+        <button type="button" class="close-button" (click)="cerrarUbicacion()">×</button>
+      </header>
+
+      <form [formGroup]="ubicacionForm" (ngSubmit)="guardarUbicacion()">
+        <div class="form-grid">
+          <div class="form-field full-width">
+            <label for="ubicacionNombre">Nombre estandarizado</label>
+            <input
+              id="ubicacionNombre"
+              formControlName="nombre"
+              placeholder="Planta Palmas - Acceso principal"
+            />
+          </div>
+          <div class="form-field">
+            <label for="ubicacionTipo">Tipo</label>
+            <select id="ubicacionTipo" formControlName="tipo">
+              <option value="PLANTA">Planta</option>
+              <option value="ACOPIO">Centro de acopio</option>
+              <option value="PARCELA">Parcela</option>
+              <option value="TALLER">Taller</option>
+              <option value="ALMACEN">Almacén</option>
+              <option value="OTRO">Otro</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="ubicacionEstado">Estado</label>
+            <select id="ubicacionEstado" formControlName="estado">
+              <option value="ACTIVA">Activa</option>
+              <option value="INACTIVA">Inactiva</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="latitud">Latitud</label>
+            <input id="latitud" type="number" step="0.0000001" formControlName="latitud" />
+          </div>
+          <div class="form-field">
+            <label for="longitud">Longitud</label>
+            <input id="longitud" type="number" step="0.0000001" formControlName="longitud" />
+          </div>
+          <div class="form-field full-width">
+            <label>Selecciona el punto en el mapa</label>
+            <app-mapa-ubicacion
+              [puntos]="puntosUbicacion"
+              [editable]="true"
+              (coordenadas)="seleccionarCoordenadas($event)"
+            />
+            <small class="field-help"
+              >Haz clic en el mapa o arrastra el marcador para completar las coordenadas. También
+              puedes escribirlas manualmente.</small
+            >
+          </div>
+          <div class="form-field full-width geolocation-row">
+            <button
+              type="button"
+              class="location-button"
+              (click)="usarMiUbicacion()"
+              [disabled]="obteniendoUbicacion()"
+            >
+              {{ obteniendoUbicacion() ? 'Obteniendo coordenadas...' : 'Usar mi ubicación actual' }}
+            </button>
+            <small>Para mayor precisión, úsalo físicamente en el punto de referencia.</small>
+          </div>
+          <div class="form-field full-width">
+            <label for="referencia">Referencia de acceso</label>
+            <textarea
+              id="referencia"
+              rows="3"
+              maxlength="300"
+              formControlName="referencia"
+              placeholder="Portón, sector, punto de control u otra referencia"
+            ></textarea>
+          </div>
+        </div>
+        @if (mensajeError()) {
+          <div class="form-message error">{{ mensajeError() }}</div>
+        }
+        <footer class="modal-actions">
+          <button type="button" class="secondary-button" (click)="cerrarUbicacion()">
+            Cancelar
+          </button>
+          <button type="submit" class="primary-button" [disabled]="guardando()">
+            {{ guardando() ? 'Guardando...' : 'Guardar ubicación' }}
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}

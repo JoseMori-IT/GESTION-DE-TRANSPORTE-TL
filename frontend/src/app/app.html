@@ -1,0 +1,8 @@
+<div [class.app-shell]="mostrarMenu()">
+  @if (mostrarMenu()) {
+    <app-menu-principal />
+  }
+  <div class="route-area"><router-outlet /></div>
+</div>
+
+<app-dialogo />

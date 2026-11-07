@@ -1,0 +1,255 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+.averia-panel {
+  padding: 18px;
+  border: 1px solid #f1d5a7;
+  border-radius: 16px;
+  background: #fffaf2;
+  margin: 16px 0;
+  font: inherit;
+  color: #1d1d1f;
+  overflow-wrap: anywhere;
+}
+h3 {
+  font-size: 17px;
+  margin: 0 0 12px;
+}
+p {
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 8px 0;
+}
+small,
+.ayuda {
+  font-size: 12px;
+  color: #626875;
+  line-height: 1.6;
+}
+.acciones {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+button {
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 16px;
+  background: #007aff;
+  color: white;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  min-height: 44px;
+}
+button.secundario {
+  background: #eceef3;
+  color: #444;
+}
+button.reportar {
+  background: #fff;
+  color: #a15a00;
+  border: 1px solid #ebce9d;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+button:focus-visible {
+  outline: 3px solid #007aff;
+  outline-offset: 3px;
+}
+form {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #eadac1;
+}
+label {
+  display: grid;
+  gap: 7px;
+  font-size: 14px;
+}
+input,
+textarea,
+select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #d8dbe3;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fff;
+  font: inherit;
+}
+textarea {
+  min-height: 85px;
+}
+.error {
+  background: #fff0f1;
+  color: #ab283e;
+  padding: 12px;
+  border-radius: 10px;
+}
+details {
+  margin-top: 16px;
+  font-size: 13px;
+}
+summary {
+  cursor: pointer;
+  color: #006bd6;
+}
+details article {
+  border-top: 1px solid #ddd;
+  padding: 10px 0;
+}
+@media (max-width: 550px) {
+  .acciones {
+    flex-direction: column;
+  }
+  .acciones button {
+    width: 100%;
+  }
+  .averia-panel {
+    padding: 14px;
+  }
+}
+
+.traza {
+  white-space: pre-line;
+  font-size: 12px;
+  color: #626875;
+}
+
+.averia-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.averia-heading h3 {
+  margin: 5px 0 0;
+}
+.averia-estado {
+  font-weight: 600;
+  color: #945000;
+}
+.averia-datos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin: 20px 0;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #e2e3e9;
+  border-radius: 12px;
+}
+.averia-datos div {
+  min-width: 0;
+}
+dt {
+  font-size: 12px;
+  color: #626875;
+  margin-bottom: 6px;
+}
+dd {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+.siguiente-paso {
+  background: #fff;
+  padding: 16px;
+  border: 1px solid #e2e3e9;
+  border-radius: 12px;
+}
+.siguiente-paso > strong {
+  font-size: 14px;
+}
+.siguiente-paso p {
+  margin-bottom: 0;
+}
+@media (max-width: 600px) {
+  .averia-heading {
+    flex-direction: column;
+  }
+  .averia-datos {
+    grid-template-columns: 1fr;
+    padding: 16px;
+    gap: 14px;
+  }
+  .averia-heading button {
+    width: 100%;
+  }
+}
+
+form {
+  background: white;
+  padding: 20px;
+  border: 1px solid #e2e3e9;
+  border-radius: 12px;
+}
+form h3 {
+  margin: 0;
+}
+form .acciones {
+  justify-content: flex-end;
+  padding-top: 14px;
+  border-top: 1px solid #e2e3e9;
+}
+.acciones .enlace {
+  background: transparent;
+  color: #006bd6;
+  border: 1px solid #dce5f5;
+}
+.resultado-retorno {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  background: #f5f6fa;
+  padding: 14px;
+  border-radius: 10px;
+}
+.resultado-retorno span {
+  font-size: 12px;
+  color: #626875;
+}
+.resultado-retorno strong {
+  display: block;
+  margin-top: 6px;
+  color: #1d1d1f;
+  font-size: 13px;
+}
+.confirmar-recepcion {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #cbdfff;
+  border-radius: 10px;
+  background: #f2f7ff;
+}
+.confirmar-recepcion input {
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  flex-shrink: 0;
+  margin: 2px 0;
+  accent-color: #007aff;
+}
+@media (max-width: 600px) {
+  form {
+    padding: 14px;
+  }
+  .resultado-retorno {
+    grid-template-columns: 1fr;
+  }
+  .resultado-retorno strong {
+    display: inline;
+    margin-left: 8px;
+  }
+}

@@ -1,0 +1,122 @@
+@if (datos().configurada) {
+  <section class="hoja ambiente">
+    <header class="cabecera">
+      <img src="assets/branding/logopalmas.webp" alt="Palmas" />
+      <div>
+        <small>CONSUMO Y EMISIONES</small>
+        <h1>Estimación de los recorridos</h1>
+        <p>{{ periodo() }} · Ruta: {{ ruta() === 'TODAS' ? 'Todas' : ruta() }}</p>
+      </div>
+      <span>01<br />Diésel / CO₂</span>
+    </header>
+    <app-consumo-indicadores [datos]="datos()" />
+    <div class="caja metodologia">
+      <p>
+        <b>Referencia:</b> {{ datos().referencia.version }} · {{ datos().referencia.fecha }}. Diésel
+        = km × {{ datos().referencia.galonesPorKm }} gal/km; CO₂ = km ×
+        {{ datos().referencia.kgCo2PorKm }} kg/km. Factores internos independientes de la carga,
+        aplicados como escenario a toda la selección. La versión y los supuestos se conservan en
+        esta exportación; no son una medición histórica de combustible.
+      </p>
+    </div>
+    <footer>
+      Las emisiones mostradas son CO₂ estimado de los recorridos; no constituyen una huella de
+      carbono completa ni CO₂ equivalente verificado.
+    </footer>
+  </section>
+  <section class="hoja anexo">
+    <header class="cabecera">
+      <img src="assets/branding/logopalmas.webp" alt="Palmas" />
+      <div>
+        <small>BASE DEL REPORTE</small>
+        <h1>Detalle y control de registros</h1>
+        <p>{{ datos().seleccion.length }} servicios seleccionados · incluye auxilios</p>
+      </div>
+      <span>02<br />Detalle</span>
+    </header>
+    <p class="ayuda">
+      Las estimaciones solo consideran servicios completados. La secuencia muestra las paradas
+      planificadas, incluido el regreso cuando existe.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Servicio / unidad</th>
+          <th>Estado / programación</th>
+          <th>Recorrido</th>
+          <th>Distancia utilizada</th>
+          <th>Diésel / CO₂ estimados</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (s of datos().seleccion; track s.id) {
+          <tr>
+            <td>
+              <b>{{ s.codigo }}</b
+              ><small
+                >{{ s.vehiculo.placa }}
+                @if (s.servicioAuxiliadoId) {
+                  · Auxilio
+                }
+              </small>
+            </td>
+            <td>
+              {{ s.estado.replaceAll('_', ' ')
+              }}<small>{{ fechaServicio(s.fechaHoraSalida) }}</small>
+            </td>
+            <td>
+              @if (s.tramos?.length) {
+                {{ s.tramos![0].origen }}
+                @for (t of s.tramos; track t.orden) {
+                  → {{ t.destino }}
+                }
+              } @else {
+                {{ s.origenDescripcion }} → {{ s.destinoDescripcion }}
+              }
+            </td>
+            <td>
+              @if (fila(s.id); as d) {
+                <b>{{ d.km === null ? 'No utilizado' : numero(d.km) + ' km' }}</b
+                ><small>{{
+                  d.fuente === 'ODOMETRO'
+                    ? 'Odómetro'
+                    : d.fuente === 'RUTA'
+                      ? 'Ruta estimada'
+                      : d.fuente === 'REVISION'
+                        ? 'Por revisar'
+                        : d.fuente === 'SIN_REFERENCIA'
+                          ? 'Sin referencia'
+                          : 'Sin datos'
+                }}</small>
+                @if (d.fuente === 'REVISION') {
+                  <small
+                    >Lecturas: {{ numero(d.inicial) }} / {{ numero(d.final) }} km.
+                    {{ d.motivo }}</small
+                  >
+                }
+              } @else {
+                No estimado
+              }
+            </td>
+            <td>
+              @if (fila(s.id); as d) {
+                {{ d.galones === null ? 'Sin estimación' : numero(d.galones, 2) + ' gal'
+                }}<small>{{ d.co2 === null ? '' : numero(d.co2, 2) + ' kg CO₂' }}</small>
+              } @else {
+                No aplica
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5">Sin servicios en la selección.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    <footer>
+      Generado {{ fecha() }} · {{ generadoPor() }} · Conservar junto con los filtros y la referencia
+      de cálculo. No se alteraron los registros originales.
+    </footer>
+  </section>
+}

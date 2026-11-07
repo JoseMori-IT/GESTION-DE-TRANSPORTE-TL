@@ -1,0 +1,423 @@
+/* Presentación de pantalla; la impresión A4 mantiene sus estilos originales. */
+@media screen {
+  :host {
+    background: #f5f5f7;
+    color: #1d1d1f;
+    font-family: 'Palmas Poppins', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page,
+  .content {
+    background: #f5f5f7;
+  }
+  .content {
+    padding: 38px 36px 48px;
+    color: #1d1d1f;
+  }
+  .sidebar {
+    background: rgba(250, 250, 252, 0.94);
+    border-right: 1px solid #dedee3;
+    color: #515154;
+    backdrop-filter: blur(18px);
+  }
+  .sidebar .nav-item {
+    border-radius: 10px;
+    color: #515154;
+    font-weight: 400;
+  }
+  .sidebar .nav-item:hover {
+    background: #eaeaf0;
+    color: #1d1d1f;
+  }
+  .sidebar .nav-item.active {
+    background: #e3eaf5;
+    color: #0066cc;
+    font-weight: 600;
+  }
+  .logout {
+    border: 1px solid #d6d6dc;
+    border-radius: 10px;
+    background: #fff;
+    color: #515154;
+  }
+  .topbar {
+    align-items: center;
+    margin-bottom: 26px;
+  }
+  .content .topbar h1 {
+    color: #1d1d1f;
+    font-size: 34px;
+    font-weight: 600;
+    letter-spacing: -1.2px;
+    margin: 7px 0 12px;
+  }
+  .topbar p {
+    font-size: 11px;
+    color: #86868b;
+  }
+  .topbar span {
+    font-size: 13px;
+    line-height: 1.7;
+    color: #6e6e73;
+  }
+  .topbar-actions {
+    gap: 10px;
+  }
+  .primary-button {
+    background: #0071e3;
+    border: 1px solid #0071e3;
+    border-radius: 11px;
+    min-height: 44px;
+    padding: 11px 18px;
+    color: white;
+    box-shadow: 0 2px 4px #0071e312;
+    font:
+      600 12px 'Palmas Poppins',
+      sans-serif;
+  }
+  .primary-button:hover:not(:disabled) {
+    background: #0077ed;
+  }
+  .print-button,
+  .clear-button {
+    background: #fff;
+    border: 1px solid #dedee4;
+    border-radius: 10px;
+    color: #0066cc;
+    min-height: 42px;
+    padding: 10px 16px;
+    font:
+      500 12px 'Palmas Poppins',
+      sans-serif;
+  }
+  .clear-button {
+    background: #f5f5f7;
+    color: #6e6e73;
+  }
+  .filters-panel {
+    background: #fff;
+    border: 1px solid #e4e4e9;
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 5px 20px #00000004;
+    margin-bottom: 22px;
+  }
+  .filters-heading {
+    margin-bottom: 22px;
+    gap: 15px;
+  }
+  .filters-heading p,
+  .panel-heading p {
+    color: #86868b;
+    font-size: 11px;
+  }
+  .filters-heading h2,
+  .panel-heading h2 {
+    color: #1d1d1f;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+  .filters-grid {
+    gap: 14px;
+  }
+  .filter-field label {
+    color: #6e6e73;
+    font-size: 11px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .filter-field input,
+  .filter-field select {
+    box-sizing: border-box;
+    min-width: 0;
+    width: 100%;
+    height: 45px;
+    background: #fafafc;
+    border: 1px solid #dedee4;
+    border-radius: 9px;
+    padding: 10px 12px;
+    color: #1d1d1f;
+    font:
+      12px 'Palmas Poppins',
+      sans-serif;
+  }
+  .filter-field input::placeholder {
+    color: #86868b;
+  }
+  .summary {
+    gap: 18px;
+    margin-bottom: 24px;
+  }
+  .summary-card {
+    background: #fff;
+    border: 1px solid #e4e4e9;
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 5px 20px #00000004;
+  }
+  .summary-card small,
+  .summary-card span {
+    color: #86868b;
+    font-size: 11px;
+  }
+  .summary-card strong {
+    display: block;
+    color: #1d1d1f;
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: -1px;
+    margin: 12px 0;
+  }
+  .analysis-grid {
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .report-panel,
+  .history-panel {
+    background: #fff;
+    border: 1px solid #e4e4e9;
+    border-radius: 18px;
+    box-shadow: 0 8px 30px #00000004;
+    overflow: hidden;
+  }
+  .report-panel {
+    padding: 22px;
+  }
+  .panel-heading {
+    background: #fff;
+    padding: 0 0 20px;
+  }
+  .ranking-list {
+    display: grid;
+    gap: 10px;
+  }
+  .ranking-item {
+    padding: 16px;
+    background: #fafafc;
+    border: 1px solid #eeeef2;
+    border-radius: 11px;
+    box-shadow: none;
+    gap: 16px;
+  }
+  .ranking-item strong {
+    color: #1d1d1f;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .ranking-item small {
+    color: #86868b;
+    font-size: 11px;
+    margin-top: 5px;
+  }
+  .ranking-item .duration,
+  .ranking-item .quantity {
+    padding: 7px 10px;
+    border-radius: 9px;
+    background: #eaf2fe;
+    color: #0066cc;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .history-heading {
+    padding: 22px 24px;
+    margin: 0;
+  }
+  .results {
+    color: #6e6e73;
+    font-size: 11px;
+    padding: 6px 10px;
+    background: #f1f1f5;
+    border-radius: 20px;
+  }
+  .table-container {
+    background: #fff;
+  }
+  th {
+    background: #fafafc;
+    border-bottom: 1px solid #e8e8ed;
+    padding: 17px 20px;
+    color: #86868b;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  td {
+    border-bottom: 1px solid #eeeef2;
+    background: transparent;
+    padding: 20px;
+    color: #515154;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+  td strong {
+    color: #1d1d1f;
+    font-weight: 600;
+  }
+  td small {
+    color: #86868b;
+    font-size: 10px;
+  }
+  tbody tr:hover {
+    background: #fafafd;
+  }
+  .status {
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: 600;
+    padding: 6px 10px;
+    letter-spacing: 0.025em;
+  }
+  .status.completed {
+    background: #e8f5ed;
+    color: #287b4d;
+  }
+  .status.cancelled {
+    background: #fff0ef;
+    color: #c04d46;
+  }
+  .status.programmed {
+    background: #edf3ff;
+    color: #326ec1;
+  }
+  .status.in-progress {
+    background: #fff5e2;
+    color: #966714;
+  }
+  .empty-state,
+  .state-panel {
+    background: #fff;
+    color: #86868b;
+    border-radius: 14px;
+  }
+  .state-panel.error {
+    background: #fff0ef;
+    color: #c04d46;
+  }
+  .loader {
+    border-color: #e4e4e9;
+    border-top-color: #0071e3;
+  }
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible {
+    outline: 3px solid #0071e366;
+    outline-offset: 3px;
+  }
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+@media screen and (max-width: 1000px) {
+  .filters-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media screen and (max-width: 760px) {
+  .content {
+    padding: 24px 16px 32px;
+  }
+  .content .topbar h1 {
+    font-size: 27px;
+  }
+  .filters-panel,
+  .report-panel {
+    padding: 18px;
+  }
+  .filters-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .summary {
+    gap: 10px;
+  }
+  .summary-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  .summary-card strong {
+    font-size: 27px;
+  }
+  .analysis-grid {
+    gap: 16px;
+  }
+  .history-heading {
+    padding: 18px;
+  }
+  .table-container tbody tr {
+    background: #fff;
+    border: 1px solid #e4e4e9;
+    border-radius: 12px;
+    box-shadow: none;
+  }
+  .table-container td {
+    padding: 12px 0;
+  }
+  .table-container td::before {
+    color: #86868b;
+  }
+}
+@media screen and (max-width: 480px) {
+  .filters-grid {
+    grid-template-columns: 1fr;
+  }
+  .topbar-actions {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .topbar-actions button {
+    flex: 1 1 140px;
+  }
+}
+
+.report-tabs {
+  display: flex;
+  gap: 6px;
+  background: #eaeaf0;
+  border-radius: 13px;
+  padding: 5px;
+  width: fit-content;
+  margin-bottom: 22px;
+  max-width: 100%;
+}
+.report-tabs button {
+  font: inherit;
+  font-size: 14px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #626875;
+  padding: 12px 20px;
+  cursor: pointer;
+}
+.report-tabs button[aria-selected='true'] {
+  background: white;
+  color: #006bdf;
+  box-shadow: 0 1px 5px #00000012;
+}
+.report-tabs button:focus-visible {
+  outline: 2px solid #007aff;
+  outline-offset: 2px;
+}
+.general-print-service {
+  break-inside: avoid;
+  border-bottom: 1px solid #ddd;
+  padding: 10px 0;
+}
+.general-print-service h3 {
+  font-size: 13px;
+}
+.general-print-service p {
+  font-size: 11px;
+  line-height: 1.5;
+}
+@media print {
+  .report-tabs {
+    display: none;
+  }
+}
+
+.report-tabs {
+  flex-wrap: wrap;
+}

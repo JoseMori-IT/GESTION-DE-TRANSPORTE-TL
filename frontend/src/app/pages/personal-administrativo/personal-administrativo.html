@@ -1,0 +1,596 @@
+<div class="admin-page">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">
+        <img src="assets/branding/logopalmas.webp" alt="Grupo Palmas" />
+      </div>
+
+      <span>Gestión de Transporte</span>
+    </div>
+
+    <nav>
+      <button type="button" class="nav-item" (click)="volverDashboard()">
+        <span>Resumen</span>
+      </button>
+
+      <button type="button" class="nav-item active">
+        <span>Personal administrativo</span>
+      </button>
+
+      <button type="button" class="nav-item" (click)="irAuditoria()">
+        <span>Auditoría</span>
+      </button>
+    </nav>
+
+    <button type="button" class="logout-button" (click)="cerrarSesion()">Cerrar sesión</button>
+  </aside>
+
+  <main class="content">
+    <header class="page-header">
+      <div>
+        <p>Administración de accesos</p>
+        <h1>Personal administrativo</h1>
+
+        <span> Gestiona operadores y auxiliares conservando su historial laboral. </span>
+      </div>
+
+      <button type="button" class="primary-button" (click)="abrirNuevo()">+ Nuevo personal</button>
+    </header>
+
+    @if (mensajeExito()) {
+      <div class="message success">
+        {{ mensajeExito() }}
+      </div>
+    }
+
+    @if (mensajeError()) {
+      <div class="message error">
+        {{ mensajeError() }}
+      </div>
+    }
+
+    <section class="summary-grid">
+      <article class="summary-card">
+        <small>Total registrado</small>
+        <strong>{{ personal().length }}</strong>
+        <span>Registros históricos</span>
+      </article>
+
+      <article class="summary-card active-card">
+        <small>Personal activo</small>
+        <strong>{{ totalActivos() }}</strong>
+        <span>Con acceso al sistema</span>
+      </article>
+
+      <article class="summary-card inactive-card">
+        <small>Personal inactivo</small>
+        <strong>{{ totalInactivos() }}</strong>
+        <span>Sin acceso al sistema</span>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <p>Directorio administrativo</p>
+          <h2>Personal registrado</h2>
+        </div>
+
+        <label class="search-box">
+          <span>⌕</span>
+
+          <input
+            type="search"
+            placeholder="Buscar por DNI, nombre, correo o cargo"
+            [value]="filtro()"
+            (input)="actualizarFiltro($event)"
+          />
+        </label>
+      </div>
+
+      @if (cargando()) {
+        <div class="loading-state">
+          <span class="loader"></span>
+          <p>Cargando personal administrativo...</p>
+        </div>
+      } @else if (personalFiltrado().length === 0) {
+        <div class="empty-state">
+          <h3>No se encontraron registros</h3>
+
+          <p>Registra nuevo personal o modifica el término utilizado en la búsqueda.</p>
+        </div>
+      } @else {
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Personal</th>
+                <th>DNI</th>
+                <th>Cargo</th>
+                <th>Fecha de ingreso</th>
+                <th>Fecha de cese</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (persona of personalFiltrado(); track persona.id) {
+                <tr>
+                  <td data-label="Personal">
+                    <div class="person-cell">
+                      <span class="avatar">
+                        {{ persona.nombres.charAt(0) }}
+                      </span>
+
+                      <div>
+                        <strong>
+                          {{ persona.nombres }}
+                          {{ persona.apellidos }}
+                        </strong>
+
+                        <small>
+                          {{ persona.correo }}
+                        </small>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td data-label="DNI">
+                    {{ persona.dni }}
+                  </td>
+
+                  <td data-label="Cargo">
+                    {{ nombreCargo(persona.cargo) }}
+                  </td>
+
+                  <td data-label="Fecha de ingreso">
+                    {{ persona.fechaIngreso }}
+                  </td>
+
+                  <td data-label="Fecha de cese">
+                    {{ persona.fechaCese || '—' }}
+                  </td>
+
+                  <td data-label="Estado">
+                    <span
+                      class="status"
+                      [class.active]="persona.activo"
+                      [class.inactive]="!persona.activo"
+                    >
+                      {{ persona.activo ? 'ACTIVO' : 'INACTIVO' }}
+                    </span>
+                  </td>
+
+                  <td data-label="Acciones">
+                    <div class="actions">
+                      <button
+                        type="button"
+                        class="detail-button"
+                        [disabled]="procesando()"
+                        (click)="abrirDetalle(persona)"
+                      >
+                        Ver detalle
+                      </button>
+
+                      <button
+                        type="button"
+                        class="secondary-button"
+                        [disabled]="procesando() || !puedeGestionar(persona)"
+                        (click)="abrirEditar(persona)"
+                      >
+                        Editar
+                      </button>
+
+                      @if (persona.activo) {
+                        <button
+                          type="button"
+                          class="danger-button"
+                          [disabled]="procesando() || !puedeGestionar(persona)"
+                          (click)="abrirDesactivacion(persona)"
+                        >
+                          Desactivar
+                        </button>
+                      } @else {
+                        <button
+                          type="button"
+                          class="reactivate-button"
+                          [disabled]="procesando()"
+                          (click)="reactivar(persona)"
+                        >
+                          Reactivar
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+
+                @if (!persona.activo && persona.motivoDesactivacion) {
+                  <tr class="history-row">
+                    <td colspan="7">
+                      <strong>Motivo de desactivación:</strong>
+                      {{ persona.motivoDesactivacion }}
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  </main>
+</div>
+
+@if (mostrarFormulario()) {
+  <div class="modal-backdrop">
+    <section class="modal" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div>
+          <p>
+            {{ personalEditando() ? 'Actualización de ficha' : 'Registro de personal' }}
+          </p>
+
+          <h2>
+            {{
+              personalEditando()
+                ? 'Editar personal administrativo'
+                : 'Nuevo personal administrativo'
+            }}
+          </h2>
+        </div>
+
+        <button
+          type="button"
+          class="close-button"
+          [disabled]="procesando()"
+          (click)="cerrarFormulario()"
+        >
+          ×
+        </button>
+      </header>
+
+      <form class="form" [formGroup]="formulario" (ngSubmit)="guardar()">
+        <div class="form-grid">
+          <label class="field">
+            <span>DNI</span>
+
+            <input
+              type="text"
+              inputmode="numeric"
+              appSoloDigitos
+              [limiteDigitos]="8"
+              maxlength="8"
+              formControlName="dni"
+              placeholder="Coloca tu DNI"
+            />
+
+            @if (formulario.controls.dni.touched && formulario.controls.dni.invalid) {
+              <small> Ingresa un DNI válido de 8 dígitos. </small>
+            }
+          </label>
+
+          <label class="field">
+            <span>Fecha de ingreso</span>
+
+            <input type="date" formControlName="fechaIngreso" />
+          </label>
+
+          <label class="field">
+            <span>Nombres</span>
+
+            <input type="text" formControlName="nombres" placeholder="" />
+
+            @if (formulario.controls.nombres.touched && formulario.controls.nombres.invalid) {
+              <small>Los nombres son obligatorios.</small>
+            }
+          </label>
+
+          <label class="field">
+            <span>Apellidos</span>
+
+            <input type="text" formControlName="apellidos" placeholder="" />
+
+            @if (formulario.controls.apellidos.touched && formulario.controls.apellidos.invalid) {
+              <small>Los apellidos son obligatorios.</small>
+            }
+          </label>
+
+          <label class="field full-width">
+            <span>Correo electrónico</span>
+
+            <input type="email" formControlName="correo" placeholder="usuario@palmas.com.pe" />
+
+            @if (formulario.controls.correo.touched && formulario.controls.correo.invalid) {
+              <small> Ingresa un correo electrónico válido. </small>
+            }
+          </label>
+
+          <label class="field full-width">
+            <span>Cargo administrativo</span>
+
+            <select formControlName="cargo">
+              <option value="SUPERVISOR_TRANSPORTE">Supervisor de transporte</option>
+
+              <option value="OPERADOR_TRANSPORTE">Operador de transporte</option>
+
+              <option value="AUXILIAR_TRANSPORTE">Auxiliar de transporte</option>
+            </select>
+          </label>
+
+          <label class="field full-width">
+            <span>Perfil de acceso</span>
+
+            <select formControlName="rol">
+              @if (puedeCrearCoordinador) {
+                <option value="COORDINADOR">Coordinador de transporte</option>
+              }
+
+              <option value="OPERADOR">Operador</option>
+
+              <option value="CONSULTA">Solo consulta</option>
+            </select>
+          </label>
+
+          @if (!personalEditando()) {
+            <label class="field full-width">
+              <span>Contraseña temporal</span>
+
+              <input
+                type="password"
+                formControlName="contrasena"
+                autocomplete="new-password"
+                placeholder="Mínimo 8 caracteres"
+              />
+
+              @if (
+                formulario.controls.contrasena.touched && formulario.controls.contrasena.invalid
+              ) {
+                <small> La contraseña debe tener al menos 8 caracteres. </small>
+              }
+            </label>
+          }
+        </div>
+
+        <footer class="modal-actions">
+          <button
+            type="button"
+            class="cancel-button"
+            [disabled]="procesando()"
+            (click)="cerrarFormulario()"
+          >
+            Cancelar
+          </button>
+
+          <button type="submit" class="primary-button" [disabled]="procesando()">
+            @if (procesando()) {
+              Guardando...
+            } @else if (personalEditando()) {
+              Guardar cambios
+            } @else {
+              Registrar personal
+            }
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
+
+@if (mostrarDetalle()) {
+  <div class="modal-backdrop" (click)="cerrarDetalle()">
+    <section class="modal detail-modal" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div>
+          <p>Control de accesos</p>
+          <h2>Detalle del personal</h2>
+        </div>
+
+        <button type="button" class="close-button" (click)="cerrarDetalle()">&times;</button>
+      </header>
+
+      @if (cargandoDetalle()) {
+        <div class="detail-loading">
+          <span class="loader"></span>
+          <p>Cargando información...</p>
+        </div>
+      } @else if (detallePersonal(); as detalle) {
+        <div class="detail-content">
+          <section class="detail-profile">
+            <span class="detail-avatar">
+              {{ detalle.nombres.charAt(0) }}
+            </span>
+
+            <div>
+              <h3>{{ detalle.nombreCompleto }}</h3>
+              <p>{{ detalle.correo }}</p>
+              <span
+                class="status"
+                [class.active]="detalle.activo"
+                [class.inactive]="!detalle.activo"
+              >
+                {{ detalle.activo ? 'ACTIVO' : 'INACTIVO' }}
+              </span>
+            </div>
+          </section>
+
+          <section class="detail-section">
+            <h3>Información laboral</h3>
+
+            <div class="detail-grid">
+              <div class="detail-item">
+                <small>DNI</small>
+                <strong>{{ detalle.dni }}</strong>
+              </div>
+
+              <div class="detail-item">
+                <small>Cargo</small>
+                <strong>{{ nombreCargo(detalle.cargo) }}</strong>
+              </div>
+
+              <div class="detail-item">
+                <small>Rol del sistema</small>
+                <strong>{{ detalle.rol }}</strong>
+              </div>
+
+              <div class="detail-item">
+                <small>Fecha de ingreso</small>
+                <strong>{{ detalle.fechaIngreso }}</strong>
+              </div>
+
+              <div class="detail-item">
+                <small>Fecha de creación</small>
+                <strong>{{ formatearFechaHora(detalle.fechaCreacion) }}</strong>
+              </div>
+
+              <div class="detail-item">
+                <small>Fecha de baja</small>
+                <strong>{{ detalle.fechaCese || 'No aplica' }}</strong>
+              </div>
+            </div>
+
+            @if (detalle.motivoDesactivacion) {
+              <div class="detail-note">
+                <small>Motivo de desactivación</small>
+                <p>{{ detalle.motivoDesactivacion }}</p>
+              </div>
+            }
+          </section>
+
+          <section class="detail-section">
+            <h3>Actividad de la cuenta</h3>
+
+            <div class="detail-grid">
+              <div class="detail-item">
+                <small>Primer inicio de sesión</small>
+                <strong>{{ formatearFechaHora(detalle.fechaPrimerLogin) }}</strong>
+              </div>
+
+              <div class="detail-item">
+                <small>Último inicio de sesión</small>
+                <strong>{{ formatearFechaHora(detalle.fechaUltimoLogin) }}</strong>
+              </div>
+
+              <div class="detail-item">
+                <small>Última conexión</small>
+                <strong>{{ formatearFechaHora(detalle.fechaUltimaConexion) }}</strong>
+              </div>
+
+              <div class="detail-item">
+                <small>Última dirección IP</small>
+                <strong>{{ detalle.ultimaDireccionIp || 'No registrada' }}</strong>
+              </div>
+            </div>
+
+            <div class="detail-note browser-note">
+              <small>Último navegador o dispositivo</small>
+              <p>{{ detalle.ultimoUserAgent || 'No registrado' }}</p>
+            </div>
+          </section>
+
+          <section class="detail-section">
+            <div class="permissions-heading">
+              <h3>Procesos permitidos</h3>
+              <span>{{ detalle.procesosPermitidos.length }}</span>
+            </div>
+
+            <div class="permissions-list">
+              @for (proceso of detalle.procesosPermitidos; track proceso) {
+                <div class="permission-item">
+                  <p>{{ proceso }}</p>
+                </div>
+              }
+            </div>
+          </section>
+        </div>
+      }
+
+      <footer class="detail-footer">
+        <button type="button" class="cancel-button" (click)="cerrarDetalle()">Cerrar</button>
+      </footer>
+    </section>
+  </div>
+}
+
+@if (mostrarDesactivacion() && personalSeleccionado(); as persona) {
+  <div class="modal-backdrop" (click)="cerrarDesactivacion()">
+    <section class="modal small-modal" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div>
+          <p>Finalización del vínculo laboral</p>
+          <h2>Desactivar acceso</h2>
+        </div>
+
+        <button
+          type="button"
+          class="close-button"
+          [disabled]="procesando()"
+          (click)="cerrarDesactivacion()"
+        >
+          ×
+        </button>
+      </header>
+
+      <div class="selected-person">
+        <strong>
+          {{ persona.nombres }}
+          {{ persona.apellidos }}
+        </strong>
+
+        <span>
+          {{ persona.dni }} ·
+          {{ nombreCargo(persona.cargo) }}
+        </span>
+      </div>
+
+      <form
+        class="form"
+        [formGroup]="formularioDesactivacion"
+        (ngSubmit)="confirmarDesactivacion()"
+      >
+        <label class="field">
+          <span>Fecha de cese</span>
+
+          <input type="date" formControlName="fechaCese" />
+        </label>
+
+        <label class="field">
+          <span>Motivo de desactivación</span>
+
+          <textarea
+            rows="4"
+            formControlName="motivo"
+            placeholder="Indica el motivo de la baja o finalización del vínculo laboral"
+          ></textarea>
+
+          @if (
+            formularioDesactivacion.controls.motivo.touched &&
+            formularioDesactivacion.controls.motivo.invalid
+          ) {
+            <small> Ingresa un motivo de al menos 5 caracteres. </small>
+          }
+        </label>
+
+        <div class="warning-box">
+          El personal no será eliminado. Su información permanecerá disponible para consultas y
+          auditorías.
+        </div>
+
+        <footer class="modal-actions">
+          <button
+            type="button"
+            class="cancel-button"
+            [disabled]="procesando()"
+            (click)="cerrarDesactivacion()"
+          >
+            Cancelar
+          </button>
+
+          <button type="submit" class="danger-confirm-button" [disabled]="procesando()">
+            {{ procesando() ? 'Desactivando...' : 'Confirmar desactivación' }}
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}

@@ -1,0 +1,16 @@
+com.palmas.transporte.modulos.evaluacion.application.EncuestaServicioService -> com.palmas.transporte.modulos.operacion.persistence.ServicioTransporteRepository
+com.palmas.transporte.modulos.evaluacion.application.ValidacionViajeService -> com.palmas.transporte.modulos.operacion.persistence.ServicioTransporteRepository
+com.palmas.transporte.modulos.identidad.application.ContrasenaService -> com.palmas.transporte.modulos.auditoria.persistence.AuditoriaRepository
+com.palmas.transporte.modulos.mantenimiento.application.MantenimientoService -> com.palmas.transporte.modulos.identidad.persistence.UsuarioRepository
+com.palmas.transporte.modulos.operacion.application.IncidenciaViajeService -> com.palmas.transporte.modulos.flota.persistence.VehiculoRepository
+com.palmas.transporte.modulos.operacion.application.IncidenciaViajeService -> com.palmas.transporte.modulos.identidad.persistence.ConductorRepository
+com.palmas.transporte.modulos.operacion.application.IncidenciaViajeService -> com.palmas.transporte.modulos.identidad.persistence.UsuarioRepository
+com.palmas.transporte.modulos.operacion.application.IncidenciaViajeService -> com.palmas.transporte.modulos.mantenimiento.persistence.MantenimientoRepository
+com.palmas.transporte.modulos.operacion.application.ServicioTransporteService -> com.palmas.transporte.modulos.flota.persistence.VehiculoRepository
+com.palmas.transporte.modulos.operacion.application.ServicioTransporteService -> com.palmas.transporte.modulos.identidad.persistence.ConductorRepository
+com.palmas.transporte.modulos.operacion.application.ServicioTransporteService -> com.palmas.transporte.modulos.recorridos.persistence.RutaRepository
+com.palmas.transporte.modulos.operacion.application.ServicioTransporteService -> com.palmas.transporte.modulos.recorridos.persistence.UbicacionRepository
+com.palmas.transporte.modulos.operacion.application.SolicitudTransporteService -> com.palmas.transporte.modulos.identidad.persistence.UsuarioRepository
+com.palmas.transporte.modulos.operacion.application.SolicitudTransporteService -> com.palmas.transporte.modulos.recorridos.persistence.RutaRepository
+com.palmas.transporte.modulos.operacion.application.SolicitudTransporteService -> com.palmas.transporte.modulos.recorridos.persistence.UbicacionRepository
+com.palmas.transporte.modulos.flota.application.SituacionVehiculoService -> com.palmas.transporte.modulos.mantenimiento.persistence.MantenimientoRepository

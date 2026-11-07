@@ -1,0 +1,968 @@
+/* Tema visual único. No interviene en documentos ni estilos de impresión. */
+@media screen {
+  body {
+    --apple-bg: #f5f5f7;
+    --apple-surface: #fff;
+    --apple-text: #1d1d1f;
+    --apple-secondary: #6e6e73;
+    --apple-border: #e4e4e9;
+    --apple-accent: #0071e3;
+    background: var(--apple-bg) !important;
+    color: var(--apple-text) !important;
+    font-family: 'Palmas Poppins', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    :is(
+      app-root,
+      app-menu-principal,
+      app-dashboard,
+      app-vehiculos,
+      app-flota,
+      app-mantenimiento,
+      app-conductores,
+      app-rutas,
+      app-solicitudes,
+      app-servicios,
+      app-reportes,
+      app-personal-administrativo,
+      app-auditoria,
+      app-chofer,
+      app-login
+    ) {
+      font-family: 'Palmas Poppins', sans-serif !important;
+      color: var(--apple-text) !important;
+    }
+    :is(button, input, select, textarea) {
+      font-family: 'Palmas Poppins', sans-serif !important;
+    }
+    :is(
+      .app-shell,
+      .route-area,
+      .page,
+      .dashboard,
+      .admin-page,
+      .audit-page,
+      .fleet-page,
+      .maintenance-page,
+      .content
+    ) {
+      background: var(--apple-bg) !important;
+      color: var(--apple-text) !important;
+    }
+    .content {
+      padding-top: 32px;
+      padding-bottom: 40px;
+    }
+    :is(.topbar, .page-header, .welcome) :is(h1, h2) {
+      color: var(--apple-text) !important;
+      font-weight: 600;
+      letter-spacing: -0.035em;
+    }
+    :is(.topbar, .page-header, .welcome) h1 {
+      font-size: 30px;
+      line-height: 1.3;
+    }
+    :is(.topbar, .page-header, .welcome) > div > p,
+    :is(.topbar, .page-header, .welcome) > div > span {
+      color: var(--apple-secondary) !important;
+    }
+    :is(.sidebar) {
+      background: rgba(250, 250, 252, 0.96) !important;
+      border-color: #dedee3 !important;
+      color: #515154 !important;
+      backdrop-filter: blur(18px);
+    }
+    .sidebar :is(.brand, .account-menu) {
+      border-color: var(--apple-border) !important;
+    }
+    .sidebar :is(.brand > span, .brand small, .account-menu summary) {
+      color: var(--apple-secondary) !important;
+    }
+    .sidebar .nav-item {
+      color: #515154 !important;
+      background: transparent !important;
+      border-radius: 10px !important;
+      font-weight: 400;
+    }
+    .sidebar .nav-item:hover {
+      background: #ededf1 !important;
+      color: var(--apple-text) !important;
+    }
+    .sidebar .nav-item.active {
+      background: #e3eaf5 !important;
+      color: #0066cc !important;
+      font-weight: 600;
+    }
+    :is(.logout, .logout-button) {
+      background: #fff !important;
+      border: 1px solid #d6d6dc !important;
+      color: #515154 !important;
+      border-radius: 10px !important;
+    }
+    :is(
+      .summary-card,
+      .state-card,
+      .vehicle-card,
+      .maintenance-card,
+      .service-card,
+      .history-card,
+      .empty-card,
+      .loading-card,
+      .chart-card
+    ) {
+      background: #fff !important;
+      border: 1px solid var(--apple-border) !important;
+      border-radius: 16px !important;
+      box-shadow: 0 5px 22px #00000004 !important;
+      color: var(--apple-text) !important;
+    }
+    :is(.summary-card, .state-card) :is(small, .card-detail) {
+      color: var(--apple-secondary) !important;
+    }
+    :is(.summary-card, .state-card) strong {
+      color: var(--apple-text) !important;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+    }
+    :is(
+      .panel,
+      .table-panel,
+      .catalog-panel,
+      .records-panel,
+      .history-panel,
+      .report-panel,
+      .filters-panel,
+      .filter-panel,
+      .service-list-tools
+    ) {
+      background: #fff !important;
+      border: 1px solid var(--apple-border) !important;
+      border-radius: 16px !important;
+      box-shadow: 0 6px 24px #00000004 !important;
+    }
+    :is(.panel-header, .panel-heading, .filters-heading, .history-heading) {
+      background: #fff !important;
+      color: var(--apple-text) !important;
+    }
+    :is(.panel-header, .panel-heading, .filters-heading, .history-heading) :is(h2, h3) {
+      color: var(--apple-text) !important;
+      font-weight: 600;
+    }
+    :is(.panel-header, .panel-heading, .filters-heading, .history-heading) > div > p {
+      color: var(--apple-secondary) !important;
+    }
+    :is(.table-container, .table-wrapper) {
+      background: #fff !important;
+    }
+    table {
+      background: #fff !important;
+    }
+    th {
+      background: #fafafc !important;
+      color: #73737a !important;
+      border-color: #e8e8ed !important;
+      font-size: 11px !important;
+      font-weight: 600;
+      letter-spacing: 0.025em;
+    }
+    td {
+      color: #515154 !important;
+      border-color: #eeeef2 !important;
+    }
+    td strong {
+      color: var(--apple-text) !important;
+    }
+    td small {
+      color: #76767c !important;
+    }
+    tbody tr:hover {
+      background: #fafafd !important;
+    }
+    :is(.avatar, .detail-avatar) {
+      background: #eaf2fe !important;
+      color: #0066cc !important;
+      border-radius: 12px !important;
+    }
+    :is(.person-cell, .detail-profile) strong {
+      color: var(--apple-text) !important;
+    }
+    :is(
+      input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+      select,
+      textarea
+    ) {
+      background: #fafafc !important;
+      border-color: #dedee4 !important;
+      border-radius: 9px !important;
+      color: var(--apple-text) !important;
+      box-shadow: none !important;
+    }
+    input::placeholder,
+    textarea::placeholder {
+      color: #85858c !important;
+      opacity: 1;
+    }
+    :is(input[readonly], input:disabled, select:disabled, textarea:disabled) {
+      background: #f0f0f3 !important;
+      color: #76767c !important;
+    }
+    input[type='checkbox'],
+    input[type='radio'],
+    input[type='range'] {
+      accent-color: var(--apple-accent) !important;
+    }
+    :is(.search-box, .input-wrapper) {
+      background: #f5f5f7 !important;
+      border-color: var(--apple-border) !important;
+      border-radius: 10px !important;
+    }
+    :is(.search-box, .input-wrapper) input {
+      background: transparent !important;
+    }
+    :is(.form-field, .field, .filter-field, .form-grid) label {
+      color: #515154 !important;
+    }
+    :is(
+      .primary-button,
+      .submit-button,
+      .survey-primary-button,
+      .detail-primary,
+      .approve-button,
+      .schedule-button
+    ) {
+      background: var(--apple-accent) !important;
+      border: 1px solid var(--apple-accent) !important;
+      border-radius: 10px !important;
+      color: #fff !important;
+      box-shadow: 0 2px 4px #0071e310 !important;
+    }
+    :is(.primary-button, .submit-button, .survey-primary-button, .detail-primary):hover:not(
+        :disabled
+      ) {
+      background: #0077ed !important;
+    }
+    :is(
+      .secondary-button,
+      .cancel-button,
+      .clear-button,
+      .refresh-button,
+      .print-button,
+      .detail-secondary,
+      .header-button,
+      .text-button,
+      .location-button,
+      .agregar
+    ) {
+      background: #f2f2f5 !important;
+      border: 1px solid #dedee4 !important;
+      border-radius: 9px !important;
+      color: #515154 !important;
+    }
+    :is(
+      .detail-button,
+      .view-button,
+      .view-file-button,
+      .history-evidence-button,
+      .evidence-button,
+      .review-button
+    ) {
+      background: #eaf2fe !important;
+      border: 1px solid #dce8fa !important;
+      border-radius: 9px !important;
+      color: #0066cc !important;
+    }
+    :is(
+      .danger-button,
+      .deactivate-button,
+      .danger-confirm-button,
+      .reject-button,
+      .reason-confirm-button,
+      .quitar
+    ) {
+      background: #fff0ef !important;
+      border: 1px solid #f6dcd9 !important;
+      border-radius: 9px !important;
+      color: #b83f38 !important;
+    }
+    :is(.reactivate-button, .available-button) {
+      background: #e8f5ed !important;
+      border: 1px solid #d9ecdf !important;
+      border-radius: 9px !important;
+      color: #287b4d !important;
+    }
+    :is(.action-button, .small-button) {
+      border-radius: 8px !important;
+    }
+    .action-button.view {
+      background: #eaf2fe !important;
+      border-color: #dce8fa !important;
+      color: #0066cc !important;
+    }
+    .action-button.evidence {
+      background: #f2f2f5 !important;
+      border-color: #e4e4e9 !important;
+      color: #515154 !important;
+    }
+    .action-button.survey {
+      background: #fff6e7 !important;
+      border-color: #f6ead3 !important;
+      color: #916319 !important;
+    }
+    .action-button.danger {
+      background: #fff0ef !important;
+      border-color: #f6dcd9 !important;
+      color: #b83f38 !important;
+    }
+    :is(.status, .service-status, .account-status) {
+      border-radius: 20px !important;
+      font-size: 10px !important;
+      font-weight: 600;
+    }
+    :is(.status, .service-status):is(.completed, .available, .active, .approved) {
+      background: #e8f5ed !important;
+      color: #287b4d !important;
+    }
+    :is(.status, .service-status):is(.cancelled, .rejected) {
+      background: #fff0ef !important;
+      color: #b83f38 !important;
+    }
+    :is(.status, .service-status):is(.programmed, .in-progress, .requested) {
+      background: #edf3ff !important;
+      color: #326ec1 !important;
+    }
+    .status.inactive {
+      background: #f1f1f5 !important;
+      color: #76767c !important;
+    }
+    :is(
+      .modal-backdrop,
+      .evidence-overlay,
+      .evidence-backdrop,
+      .survey-overlay,
+      .service-detail-backdrop
+    ) {
+      background: rgba(29, 29, 31, 0.38) !important;
+      backdrop-filter: blur(14px) !important;
+    }
+    :is(.modal, .reason-modal, .survey-modal, .evidence-modal, .service-detail-modal) {
+      background: #f5f5f7 !important;
+      border: 1px solid #ffffffaa !important;
+      border-radius: 20px !important;
+      box-shadow: 0 28px 90px #00000026 !important;
+      color: var(--apple-text) !important;
+      font-family: 'Palmas Poppins', sans-serif !important;
+    }
+    :is(.modal-header, .modal-heading, .reason-header, .evidence-header, .service-detail-heading) {
+      border-color: var(--apple-border) !important;
+      color: var(--apple-text) !important;
+    }
+    :is(.modal, .reason-modal, .survey-modal, .evidence-modal, .service-detail-modal)
+      :is(h2, h3, h4) {
+      color: var(--apple-text) !important;
+    }
+    :is(.modal-actions, .reason-actions, .service-detail-actions, .evidence-form-actions) {
+      border-color: var(--apple-border) !important;
+      background: #f5f5f7 !important;
+    }
+    :is(.close-button, .modal-close, .detail-close) {
+      background: #ededf0 !important;
+      border: 0 !important;
+      border-radius: 50% !important;
+      color: #6e6e73 !important;
+    }
+    :is(
+      .detail-section,
+      .detail-profile,
+      .review-section,
+      .detail-facts,
+      .evidence-form,
+      .evidence-history,
+      .evidence-readonly,
+      .selected-person,
+      .request-reference
+    ) {
+      background: #fff !important;
+      border: 1px solid var(--apple-border) !important;
+      border-radius: 12px !important;
+      color: #515154 !important;
+    }
+    :is(.consultation-status > div, .detail-status, .approval-banner) {
+      background: #eaf2fe !important;
+      border: 1px solid #dce8fa !important;
+      border-radius: 12px !important;
+      color: #245d9a !important;
+    }
+    :is(.consultation-status, .detail-status) strong {
+      color: var(--apple-text) !important;
+    }
+    :is(.request-route, .new-route, .plan, .calculo, .resumen, .avance, .route) {
+      background: #f5f5f7 !important;
+      border-color: #e4e4e9 !important;
+      border-radius: 12px !important;
+      color: var(--apple-text) !important;
+    }
+    :is(.plan, .calculo, .resumen, .avance, .route) :is(h3, h4, strong) {
+      color: var(--apple-text) !important;
+    }
+    :is(
+      .parada,
+      .fila-parada,
+      .segmento,
+      .indicadores > div,
+      .secuencia li,
+      .avance li,
+      .ranking-item,
+      .location-card
+    ) {
+      background: #fff !important;
+      border: 1px solid var(--apple-border) !important;
+      border-radius: 10px !important;
+    }
+    .secuencia .tarea,
+    .tiempos-reales > div {
+      background: #edf1f7 !important;
+      border-color: #dfe6ef !important;
+      border-radius: 10px !important;
+    }
+    .avance li.actual {
+      border-color: #86b3ed !important;
+      box-shadow: inset 3px 0 #0071e3 !important;
+    }
+    .avance li.hecho {
+      background: #fff !important;
+      border-color: #e4e4e9 !important;
+    }
+    .camion {
+      color: #0071e3 !important;
+    }
+    :is(
+      .detail-note,
+      .reason-reference,
+      .approval-facts,
+      .process-notice,
+      .sync-card,
+      .odometro-field
+    ) {
+      background: #f0f3f8 !important;
+      border-color: #e1e6ee !important;
+      border-radius: 10px !important;
+      color: #515154 !important;
+    }
+    :is(.message.success, .notification.success) {
+      background: #edf7f0 !important;
+      border: 1px solid #dceee1 !important;
+      border-radius: 10px !important;
+      color: #287b4d !important;
+    }
+    :is(.message.error, .notification.error, .reason-message, .evidence-message) {
+      background: #fff0ef !important;
+      border: 1px solid #f6dcd9 !important;
+      border-radius: 10px !important;
+      color: #b83f38 !important;
+    }
+    :is(.warning-box, .reason-warning) {
+      background: #fff6e7 !important;
+      border-color: #f6ead3 !important;
+      color: #916319 !important;
+      border-radius: 10px !important;
+    }
+    .loader {
+      border-top-color: #0071e3 !important;
+    }
+    .login-card {
+      background: rgba(255, 255, 255, 0.95) !important;
+      border: 1px solid #ffffffbb !important;
+      border-radius: 24px !important;
+      box-shadow: 0 28px 90px #00000026 !important;
+      backdrop-filter: blur(20px);
+    }
+    .login-header h1 {
+      color: #1d1d1f !important;
+      letter-spacing: -0.04em;
+    }
+    .login-header h1 span {
+      color: #0071e3 !important;
+    }
+    .login-header p,
+    .card-footer {
+      color: #6e6e73 !important;
+    }
+    .login-card .submit-button {
+      min-height: 46px;
+    }
+    .login-card .input-icon,
+    .password-toggle {
+      color: #6e6e73 !important;
+    }
+    :is(button, a, input, textarea, select, summary):focus-visible {
+      outline: 3px solid #0071e366 !important;
+      outline-offset: 3px !important;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .service-state-tabs {
+      background: #ededf0 !important;
+      border-radius: 11px !important;
+    }
+    .service-state-tabs button {
+      background: transparent !important;
+      border: 0 !important;
+      color: #6e6e73 !important;
+      border-radius: 8px !important;
+    }
+    .service-state-tabs button.selected {
+      background: #fff !important;
+      color: #1d1d1f !important;
+      box-shadow: 0 1px 4px #00000018 !important;
+    }
+    .service-state-tabs button span {
+      background: #e1e1e6 !important;
+      color: #6e6e73 !important;
+    }
+    .service-state-tabs button.selected span {
+      background: #e7f0fd !important;
+      color: #0066cc !important;
+    }
+  }
+}
+
+@media screen {
+  body .fleet-page {
+    .vehicle-card,
+    .state-card,
+    .summary-card {
+      background: #fff !important;
+      border-color: #e4e4e9 !important;
+    }
+    .card-photo,
+    .card-photo .vehicle-photo,
+    .card-photo ::ng-deep .vehicle-photo {
+      background: #f5f5f7 !important;
+    }
+    .vehicle-data,
+    .vehicle-status,
+    .state-card > div {
+      background: #fafafc !important;
+      border-color: #e4e4e9 !important;
+    }
+    .vehicle-actions button,
+    .maintenance-button,
+    .available-button {
+      background: #eaf2fe !important;
+      border-color: #b8d4f7 !important;
+      color: #0066cc !important;
+    }
+    .vehicle-actions .danger-button,
+    .out-of-service-button {
+      background: #fff0ef !important;
+      border-color: #f3c7c3 !important;
+      color: #b42318 !important;
+    }
+    .status.available,
+    .status.operating,
+    .status.reserved,
+    .status.maintenance,
+    .status.inactive {
+      background: #eaf2fe !important;
+      color: #0066cc !important;
+    }
+    .fleet-section {
+      background: #fff !important;
+      border-color: #e4e4e9 !important;
+    }
+    .no-operation {
+      background: #fafafc !important;
+      border-color: #e4e4e9 !important;
+    }
+    .availability-dot {
+      background: #22a06b !important;
+      box-shadow: 0 0 0 4px #dff5e9 !important;
+      animation: fleet-available-pulse 1.8s ease-in-out infinite;
+    }
+  }
+}
+
+@keyframes fleet-available-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.38;
+    transform: scale(0.82);
+  }
+}
+
+@media screen {
+  body .recent-table {
+    background: #fff !important;
+    border-color: #e4e4e9 !important;
+    border-radius: 14px !important;
+    th {
+      background: #fafafc !important;
+      color: #6e6e73 !important;
+      border-color: #e4e4e9 !important;
+    }
+    td {
+      background: #fff !important;
+      color: #515154 !important;
+      border-color: #eeeef2 !important;
+    }
+    tbody tr:hover td {
+      background: #fafafd !important;
+    }
+    .service-status.completed {
+      background: #eaf2fe !important;
+      color: #0066cc !important;
+    }
+  }
+}
+@media screen and (max-width: 760px) {
+  body {
+    .content {
+      padding: 24px 16px 32px !important;
+    }
+    :is(.topbar, .page-header, .welcome) h1 {
+      font-size: 26px !important;
+    }
+    :is(.modal, .evidence-modal, .survey-modal, .reason-modal) {
+      border-radius: 16px !important;
+    }
+    .summary-card {
+      border-radius: 12px !important;
+    }
+  }
+}
+
+/* Todos los indicadores comparten la misma superficie, tengan o no clase summary-card. */
+@media screen {
+  body :is(.summary, .summary-grid) > :is(article, button, .summary-card),
+  body :is(.stat-card, .metric-card) {
+    background: #ffffff !important;
+    background-image: none !important;
+    border: 1px solid #e4e4e9 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 5px 22px #00000004 !important;
+    color: #1d1d1f !important;
+  }
+  body :is(.summary, .summary-grid) > :is(article, button, .summary-card) strong {
+    color: #1d1d1f !important;
+  }
+  body :is(.summary, .summary-grid) > :is(article, button, .summary-card) small {
+    color: #6e6e73 !important;
+  }
+  body :is(.summary, .summary-grid) > button.selected,
+  body :is(.summary, .summary-grid) > button:focus-visible {
+    border-color: #86b3ed !important;
+  }
+}
+
+/* Acciones pendientes de migración: ningún botón operativo conserva el verde anterior. */
+@media screen {
+  body :is(.state-message, .empty-state, .loading-state, .state-panel) button,
+  body .calculo > button,
+  body :is(.reactivate-button, .available-button) {
+    background: #0071e3 !important;
+    border: 1px solid #0071e3 !important;
+    color: #fff !important;
+    border-radius: 10px !important;
+  }
+  body button.action-button:not(.danger):not(.deactivate):not(.survey),
+  body
+    .actions
+    button:not(.primary-button):not(.danger-button):not(.deactivate-button):not(.reject-button):not(
+      .cancel-button
+    ):not(.survey),
+  body .access-actions button {
+    background: #eaf2fe !important;
+    border-color: #dce8fa !important;
+    color: #0066cc !important;
+    border-radius: 8px !important;
+  }
+  body .notification.error {
+    padding: 14px 16px;
+    margin: 12px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+}
+
+/* Legibilidad del detalle y su seguimiento, sin alterar las vistas de impresión. */
+@media screen {
+  body .service-detail-modal {
+    font-size: 15px;
+    line-height: 1.65;
+    .service-detail-heading h2 {
+      font-size: 28px;
+    }
+    .service-detail-heading :is(small, p),
+    .detail-status span,
+    .detail-facts small {
+      font-size: 14px;
+      color: #515154 !important;
+    }
+    .detail-status strong {
+      font-size: 14px;
+    }
+    .detail-facts {
+      gap: 24px;
+      padding: 24px;
+    }
+    .detail-facts strong {
+      font-size: 16px;
+      font-weight: 500;
+      color: #1d1d1f !important;
+    }
+    .detail-notes h3 {
+      font-size: 17px;
+    }
+    .detail-notes p,
+    .detail-error {
+      font-size: 15px;
+    }
+    .service-detail-actions button {
+      font-size: 14px;
+    }
+    .avance {
+      font-size: 15px;
+      line-height: 1.65;
+      header > div > strong {
+        font-size: 18px;
+        color: #1d1d1f !important;
+      }
+      :is(small, li > span, p, summary, .estado-ubicacion) {
+        font-size: 14px;
+        line-height: 1.7;
+        color: #515154 !important;
+      }
+      :is(.contador, .extremos, .titulo-parada b, .local) {
+        font-size: 13px;
+        color: #515154 !important;
+      }
+      li {
+        padding: 18px;
+        gap: 9px;
+      }
+      li > strong {
+        font-size: 16px;
+        color: #1d1d1f !important;
+      }
+      .tiempos-reales strong {
+        font-size: 20px;
+        color: #1d1d1f !important;
+      }
+      .extremos {
+        margin-top: 22px;
+      }
+    }
+  }
+}
+
+/* Paleta compartida del seguimiento en servicios, solicitudes y chofer. */
+@media screen {
+  body .avance {
+    .via {
+      background: #e5e5ea !important;
+      border-color: #e5e5ea !important;
+    }
+    .via-completa,
+    .medidor span,
+    .estado-punto,
+    .hito.listo,
+    .hecho .numero-parada {
+      background: #0071e3 !important;
+    }
+    .hito,
+    .numero-parada {
+      background: #eaf2fe !important;
+      color: #0066cc !important;
+    }
+    .hito {
+      border-color: #f5f5f7 !important;
+    }
+    .hito.listo,
+    .hecho .numero-parada {
+      color: #fff !important;
+    }
+    .medidor {
+      background: #e5e5ea !important;
+    }
+    .estado-punto.movimiento {
+      box-shadow: 0 0 0 4px #eaf2fe !important;
+    }
+    .contador {
+      background: #eaf2fe !important;
+      color: #0066cc !important;
+    }
+    .tiempos-reales > div {
+      background: #fff !important;
+      border: 1px solid #e4e4e9;
+      border-radius: 10px;
+    }
+    .extremos,
+    .estado-ubicacion,
+    .estado-tramo,
+    summary,
+    small,
+    li > span,
+    p,
+    .titulo-parada b {
+      color: #515154 !important;
+    }
+    .camion {
+      filter: drop-shadow(0 3px 2px #1d1d1f22);
+    }
+  }
+}
+
+/* Cuenta y accesos: tarjetas y acciones compartidas. */
+@media screen {
+  body :is(app-cambiar-contrasena, app-restablecer-cuentas):has(main.content) {
+    color: #1d1d1f;
+    main {
+      background: #f5f5f7 !important;
+    }
+    main > section {
+      background: #fff !important;
+      border: 1px solid #e4e4e9 !important;
+      border-radius: 20px !important;
+      box-shadow: 0 8px 30px #00000005;
+    }
+    h1,
+    h2 {
+      color: #1d1d1f !important;
+    }
+    p,
+    small,
+    .dialog-label {
+      color: #515154;
+    }
+    .error {
+      color: #b42318;
+    }
+    button {
+      min-height: 44px;
+      border: 1px solid #0071e3;
+      border-radius: 10px;
+      background: #0071e3 !important;
+      color: #fff !important;
+      font-size: 14px;
+    }
+    button:hover:not(:disabled) {
+      background: #0066cc !important;
+    }
+    main > section > a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      max-width: 100%;
+      min-width: 180px;
+      min-height: 44px;
+      margin: 22px auto 0;
+      padding: 11px 20px;
+      border: 1px solid #d2d2d7;
+      border-radius: 10px;
+      background: #f5f5f7;
+      color: #1d1d1f;
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      text-align: center;
+    }
+    main > section > a:hover {
+      background: #ededf0;
+    }
+    .secondary {
+      display: block;
+      width: fit-content;
+      min-width: 180px;
+      margin: 12px auto 0;
+      background: #fff !important;
+      border-color: #d2d2d7;
+      color: #515154 !important;
+    }
+    .secondary:hover:not(:disabled) {
+      background: #f5f5f7 !important;
+    }
+    :is(input, select, textarea):focus {
+      outline: 2px solid #0071e366;
+      outline-offset: 1px;
+    }
+    button:focus-visible,
+    a:focus-visible {
+      outline: 3px solid #0071e366;
+      outline-offset: 3px;
+    }
+    .temporal,
+    .dialog-note {
+      background: #f5f5f7 !important;
+      border-color: #e4e4e9;
+      border-radius: 12px;
+    }
+    .confirmation {
+      background: #fff;
+      color: #1d1d1f;
+      border: 1px solid #e4e4e9;
+      border-radius: 20px;
+      box-shadow: 0 24px 80px #00000030;
+    }
+    .confirmation::backdrop {
+      background: #1d1d1f66;
+      backdrop-filter: blur(12px);
+    }
+    .dialog-actions .secondary {
+      margin: 0;
+      min-width: 110px;
+    }
+  }
+}
+
+@media screen {
+  body app-cambiar-contrasena .account-footer-actions {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 12px;
+    margin-top: 22px;
+    > a:hover {
+      background: #ededf0;
+    }
+  }
+  body app-restablecer-cuentas .account-footer-actions {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 12px;
+    margin-top: 22px;
+    > a,
+    > button.secondary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 1 180px;
+      min-width: 0;
+      min-height: 46px;
+      margin: 0;
+      padding: 11px 14px;
+      border: 1px solid #d2d2d7;
+      border-radius: 10px;
+      font:
+        500 14px 'Palmas Poppins',
+        sans-serif;
+      text-align: center;
+      text-decoration: none;
+      color: #1d1d1f;
+      background: #f5f5f7;
+    }
+    > a:hover,
+    > button.secondary:hover:not(:disabled) {
+      background: #ededf0 !important;
+    }
+  }
+}

@@ -1,0 +1,65 @@
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-logo-container">
+      <img src="assets/branding/logopalmas.webp" alt="Grupo Palmas" />
+    </div>
+    <span>Gestión de Transporte</span>
+  </div>
+  <nav aria-label="Menú principal">
+    @for (enlace of enlaces; track enlace.ruta) {
+      <a
+        class="nav-item"
+        [routerLink]="enlace.ruta"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        ariaCurrentWhenActive="page"
+        >{{ enlace.nombre }}</a
+      >
+    }
+    @if (administrador) {
+      <a
+        class="nav-item"
+        routerLink="/personal-administrativo"
+        routerLinkActive="active"
+        ariaCurrentWhenActive="page"
+        >Administrativos</a
+      >
+    }
+    @if (esMaster) {
+      <a
+        class="nav-item"
+        routerLink="/auditoria"
+        routerLinkActive="active"
+        ariaCurrentWhenActive="page"
+        >Auditoría</a
+      >
+    }
+  </nav>
+  <details
+    class="account-menu"
+    [open]="
+      router.url.startsWith('/cambiar-contrasena') || router.url.startsWith('/restablecer-cuentas')
+    "
+  >
+    <summary>Cuenta y accesos</summary>
+    <nav aria-label="Cuenta y accesos">
+      <a
+        class="nav-item"
+        routerLink="/cambiar-contrasena"
+        routerLinkActive="active"
+        ariaCurrentWhenActive="page"
+        >Cambiar contraseña</a
+      >
+      @if (administrador) {
+        <a
+          class="nav-item"
+          routerLink="/restablecer-cuentas"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+          >Restablecer acceso</a
+        >
+      }
+    </nav>
+  </details>
+  <button type="button" class="logout" (click)="sesion.cerrarSesion()">Cerrar sesión</button>
+</aside>

@@ -1,0 +1,1310 @@
+<div class="maintenance-page">
+  <header class="topbar">
+    <div class="brand">
+      <img src="assets/branding/logopalmas.webp" alt="Palmas" />
+
+      <div>
+        <strong>Gestión de Transporte</strong>
+        <small>{{ configuracion.datos()?.sede || 'Operación de transporte' }}</small>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <button type="button" class="secondary-button" (click)="volverDashboard()">Resumen</button>
+
+      <button type="button" class="logout-button" (click)="cerrarSesion()">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="content">
+    <section class="page-heading">
+      <div>
+        <p>Gestión de flota</p>
+        <h1>Mantenimiento de unidades</h1>
+
+        <span> Registra fallas, controla atenciones y consulta el historial de cada unidad. </span>
+      </div>
+
+      <div class="heading-actions">
+        <button
+          type="button"
+          class="secondary-button"
+          [disabled]="cargando()"
+          (click)="cargarDatos()"
+        >
+          Actualizar
+        </button>
+
+        <button type="button" class="primary-button" (click)="abrirReporte()">
+          + Reportar falla
+        </button>
+      </div>
+    </section>
+
+    @if (mensajeExito()) {
+      <div class="message success">
+        {{ mensajeExito() }}
+      </div>
+    }
+
+    @if (mensajeError()) {
+      <div class="message error">
+        {{ mensajeError() }}
+      </div>
+    }
+
+    <section class="summary">
+      <button
+        type="button"
+        class="summary-card"
+        [class.active]="filtro() === 'TODOS'"
+        (click)="seleccionarFiltro('TODOS')"
+      >
+        <div>
+          <small>Total de reportes</small>
+          <strong>{{ mantenimientos().length }}</strong>
+          <span>Historial registrado</span>
+        </div>
+      </button>
+
+      <button
+        type="button"
+        class="summary-card"
+        [class.active]="filtro() === 'REPORTADO'"
+        (click)="seleccionarFiltro('REPORTADO')"
+      >
+        <div>
+          <small>Reportados</small>
+          <strong>{{ totalReportados() }}</strong>
+          <span>Pendientes de evaluación</span>
+        </div>
+      </button>
+
+      <button
+        type="button"
+        class="summary-card"
+        [class.active]="filtro() === 'EN_EVALUACION'"
+        (click)="seleccionarFiltro('EN_EVALUACION')"
+      >
+        <div>
+          <small>En evaluación</small>
+          <strong>{{ totalEnEvaluacion() }}</strong>
+          <span>Diagnóstico registrado</span>
+        </div>
+      </button>
+
+      <button
+        type="button"
+        class="summary-card"
+        [class.active]="filtro() === 'EN_MANTENIMIENTO'"
+        (click)="seleccionarFiltro('EN_MANTENIMIENTO')"
+      >
+        <div>
+          <small>En mantenimiento</small>
+          <strong>
+            {{ totalEnMantenimiento() }}
+          </strong>
+          <span>Atenciones en proceso</span>
+        </div>
+      </button>
+
+      <button
+        type="button"
+        class="summary-card"
+        [class.active]="filtro() === 'REPARADO'"
+        (click)="seleccionarFiltro('REPARADO')"
+      >
+        <div>
+          <small>Reparados</small>
+          <strong>{{ totalReparados() }}</strong>
+          <span>Pendientes de cierre</span>
+        </div>
+      </button>
+
+      <button
+        type="button"
+        class="summary-card"
+        [class.active]="filtro() === 'CERRADO'"
+        (click)="seleccionarFiltro('CERRADO')"
+      >
+        <div>
+          <small>Cerrados</small>
+          <strong>{{ totalCerrados() }}</strong>
+          <span>Atenciones finalizadas</span>
+        </div>
+      </button>
+    </section>
+
+    <section class="maintenance-search">
+      <div class="search-copy">
+        <small>Búsqueda rápida</small>
+        <strong>Buscar historial por placa</strong>
+      </div>
+
+      <div class="search-control">
+        <span aria-hidden="true"></span>
+
+        <input
+          type="search"
+          placeholder="Ejemplo: TST-001"
+          aria-label="Buscar mantenimiento por placa"
+          [value]="busquedaPlaca()"
+          (input)="actualizarBusqueda($event)"
+        />
+
+        @if (busquedaPlaca()) {
+          <button type="button" class="clear-search" (click)="limpiarBusqueda()">Limpiar</button>
+        }
+      </div>
+    </section>
+
+    <section class="records-panel">
+      <header class="panel-heading">
+        <div>
+          <p>Control operativo</p>
+          <h2>Historial de mantenimiento</h2>
+        </div>
+
+        <span class="record-count">
+          {{ mantenimientosFiltrados().length }}
+          registros
+        </span>
+      </header>
+
+      @if (cargando()) {
+        <div class="state-card">
+          <span class="loader"></span>
+          <p>Cargando mantenimientos...</p>
+        </div>
+      } @else if (mantenimientosFiltrados().length === 0) {
+        <div class="state-card">
+          <h3>Sin registros en este estado</h3>
+          <p>No existen mantenimientos que coincidan con el filtro seleccionado.</p>
+        </div>
+      } @else {
+        <div class="maintenance-table-wrap">
+          <table class="maintenance-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Unidad</th>
+                <th>Falla</th>
+                <th>Tipo</th>
+                <th>Prioridad</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (mantenimiento of mantenimientosFiltrados(); track mantenimiento.id) {
+                <tr>
+                  <td>
+                    <strong>{{ mantenimiento.codigo }}</strong>
+                  </td>
+                  <td>{{ mantenimiento.vehiculoPlaca }}</td>
+                  <td>{{ mantenimiento.titulo }}</td>
+                  <td>{{ etiquetaTipo(mantenimiento.tipoFalla) }}</td>
+                  <td>
+                    <span class="table-pill">{{ etiquetaPrioridad(mantenimiento.prioridad) }}</span>
+                  </td>
+                  <td>
+                    <span
+                      class="table-pill status-pill maintenance-state"
+                      [attr.data-estado]="mantenimiento.estado"
+                      [class.reported-pill]="mantenimiento.estado === 'REPORTADO'"
+                      [class.active-pill]="mantenimiento.estado === 'EN_MANTENIMIENTO'"
+                      >{{ etiquetaEstado(mantenimiento.estado) }}</span
+                    >
+                  </td>
+                  <td>{{ mantenimiento.fechaReporte | date: 'dd/MM/yyyy' }}</td>
+                  <td>
+                    <button
+                      type="button"
+                      class="secondary-button table-review"
+                      (click)="revisar(mantenimiento)"
+                    >
+                      Revisar
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="records-grid">
+          @for (mantenimiento of mantenimientosFiltrados(); track mantenimiento.id) {
+            <article
+              class="maintenance-card"
+              [class.critical]="mantenimiento.prioridad === 'CRITICA'"
+              [class.closed]="mantenimiento.estado === 'CERRADO'"
+              [class.cancelled]="mantenimiento.estado === 'CANCELADO'"
+            >
+              <header class="card-header">
+                <div>
+                  <small>{{ mantenimiento.codigo }}</small>
+                  <h3>{{ mantenimiento.titulo }}</h3>
+
+                  <span>
+                    {{ mantenimiento.vehiculoPlaca }}
+                    ·
+                    {{ mantenimiento.vehiculoDescripcion }}
+                  </span>
+                </div>
+
+                <div class="card-statuses">
+                  <span
+                    class="priority"
+                    [class.low]="mantenimiento.prioridad === 'BAJA'"
+                    [class.medium]="mantenimiento.prioridad === 'MEDIA'"
+                    [class.high]="mantenimiento.prioridad === 'ALTA'"
+                    [class.critical]="mantenimiento.prioridad === 'CRITICA'"
+                  >
+                    {{ etiquetaPrioridad(mantenimiento.prioridad) }}
+                  </span>
+
+                  <span
+                    class="status maintenance-state"
+                    [attr.data-estado]="mantenimiento.estado"
+                    [class.reported]="mantenimiento.estado === 'REPORTADO'"
+                    [class.evaluation]="mantenimiento.estado === 'EN_EVALUACION'"
+                    [class.progress]="mantenimiento.estado === 'EN_MANTENIMIENTO'"
+                    [class.repaired]="mantenimiento.estado === 'REPARADO'"
+                    [class.closed]="mantenimiento.estado === 'CERRADO'"
+                    [class.cancelled]="mantenimiento.estado === 'CANCELADO'"
+                  >
+                    {{ etiquetaEstado(mantenimiento.estado) }}
+                  </span>
+                </div>
+              </header>
+
+              <div class="vehicle-box">
+                <div>
+                  <small>Unidad</small>
+                  <strong>
+                    {{ mantenimiento.vehiculoCodigo }}
+                  </strong>
+                </div>
+
+                <div>
+                  <small>Tipo de atención</small>
+                  <strong>
+                    {{ etiquetaTipo(mantenimiento.tipoFalla) }}
+                  </strong>
+                </div>
+
+                <div>
+                  <small>Kilometraje reportado</small>
+                  <strong>
+                    @if (mantenimiento.kilometrajeReporte !== null) {
+                      {{ mantenimiento.kilometrajeReporte | number }}
+                      km
+                    } @else {
+                      No registrado
+                    }
+                  </strong>
+                </div>
+              </div>
+
+              <div class="description">
+                <small>Descripción de la falla</small>
+                <p>{{ mantenimiento.descripcion }}</p>
+              </div>
+
+              @if (mantenimiento.diagnostico) {
+                <div class="detail-section">
+                  <small>Diagnóstico</small>
+                  <p>{{ mantenimiento.diagnostico }}</p>
+
+                  @if (mantenimiento.tallerProveedor) {
+                    <span>
+                      Taller:
+                      {{ mantenimiento.tallerProveedor }}
+                    </span>
+                  }
+                </div>
+              }
+
+              @if (mantenimiento.trabajoRealizado) {
+                <div class="detail-section completed">
+                  <small>Trabajo realizado</small>
+
+                  <p>
+                    {{ mantenimiento.trabajoRealizado }}
+                  </p>
+
+                  @if (mantenimiento.costo !== null) {
+                    <span>
+                      Costo registrado: S/
+                      {{ mantenimiento.costo | number: '1.2-2' }}
+                    </span>
+                  }
+                </div>
+              }
+
+              <div class="timeline">
+                <div>
+                  <small>Reportado por</small>
+                  <strong>
+                    {{ mantenimiento.reportadoPorNombre }}
+                  </strong>
+                </div>
+
+                <div>
+                  <small>Fecha de reporte</small>
+                  <strong>
+                    {{ mantenimiento.fechaReporte | date: 'dd/MM/yyyy HH:mm' }}
+                  </strong>
+                </div>
+
+                @if (mantenimiento.fechaInicioAtencion) {
+                  <div>
+                    <small>Inicio de atención</small>
+                    <strong>
+                      {{ mantenimiento.fechaInicioAtencion | date: 'dd/MM/yyyy HH:mm' }}
+                    </strong>
+                  </div>
+                }
+
+                @if (mantenimiento.fechaCierre) {
+                  <div>
+                    <small>Fecha de cierre</small>
+                    <strong>
+                      {{ mantenimiento.fechaCierre | date: 'dd/MM/yyyy HH:mm' }}
+                    </strong>
+                  </div>
+                }
+              </div>
+
+              @if (mantenimiento.observacionesCierre) {
+                <div class="closing-note">
+                  <small>Observaciones de cierre</small>
+                  <p>
+                    {{ mantenimiento.observacionesCierre }}
+                  </p>
+                </div>
+              }
+
+              <footer class="card-actions">
+                <button
+                  type="button"
+                  class="secondary-button"
+                  (click)="abrirEvidencias(mantenimiento)"
+                >
+                  Evidencias
+                </button>
+
+                <button
+                  type="button"
+                  class="secondary-button"
+                  (click)="imprimirMantenimiento(mantenimiento)"
+                >
+                  Imprimir reporte
+                </button>
+
+                @if (mantenimiento.estado === 'REPORTADO') {
+                  <button
+                    type="button"
+                    class="primary-button"
+                    [disabled]="guardando()"
+                    (click)="abrirAccion(mantenimiento, 'EVALUAR')"
+                  >
+                    Evaluar falla
+                  </button>
+
+                  <button
+                    type="button"
+                    class="danger-button"
+                    [disabled]="guardando()"
+                    (click)="cancelar(mantenimiento)"
+                  >
+                    Cancelar
+                  </button>
+                } @else if (mantenimiento.estado === 'EN_EVALUACION') {
+                  <button
+                    type="button"
+                    class="primary-button"
+                    [disabled]="guardando()"
+                    (click)="iniciar(mantenimiento)"
+                  >
+                    Iniciar atención
+                  </button>
+
+                  <button
+                    type="button"
+                    class="danger-button"
+                    [disabled]="guardando()"
+                    (click)="cancelar(mantenimiento)"
+                  >
+                    Cancelar
+                  </button>
+                } @else if (mantenimiento.estado === 'EN_MANTENIMIENTO') {
+                  <button
+                    type="button"
+                    class="primary-button"
+                    [disabled]="guardando()"
+                    (click)="abrirAccion(mantenimiento, 'REPARAR')"
+                  >
+                    Registrar reparación
+                  </button>
+                } @else if (mantenimiento.estado === 'REPARADO') {
+                  <button
+                    type="button"
+                    class="primary-button"
+                    [disabled]="guardando()"
+                    (click)="abrirAccion(mantenimiento, 'CERRAR')"
+                  >
+                    Cerrar mantenimiento
+                  </button>
+                }
+              </footer>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  </main>
+</div>
+
+@if (mostrarReporte()) {
+  <div class="modal-backdrop" (click)="cerrarReporte()">
+    <section class="modal" (click)="$event.stopPropagation()">
+      <header class="modal-heading">
+        <div>
+          <p>Gestión de mantenimiento</p>
+          <h2>Reportar falla o avería</h2>
+        </div>
+
+        <button
+          type="button"
+          class="close-button"
+          [disabled]="guardando()"
+          (click)="cerrarReporte()"
+        >
+          ×
+        </button>
+      </header>
+
+      <form [formGroup]="formularioReporte" (ngSubmit)="registrarReporte()">
+        <div class="form-grid">
+          <label>
+            <span>Vehículo disponible</span>
+
+            <select formControlName="vehiculoId">
+              <option [ngValue]="null">Selecciona una unidad</option>
+
+              @for (vehiculo of vehiculosDisponibles(); track vehiculo.id) {
+                <option [ngValue]="vehiculo.id">
+                  {{ vehiculo.placa }}
+                  —
+                  {{ vehiculo.marca }}
+                  {{ vehiculo.modelo }}
+                </option>
+              }
+            </select>
+          </label>
+
+          <label>
+            <span>Tipo de falla</span>
+
+            <select formControlName="tipoFalla">
+              <option value="">Selecciona el tipo</option>
+              <option value="MOTOR">Motor</option>
+              <option value="TRANSMISION">Transmisión</option>
+              <option value="FRENOS">Frenos</option>
+              <option value="SUSPENSION">Suspensión</option>
+              <option value="DIRECCION">Dirección</option>
+              <option value="SISTEMA_ELECTRICO">Sistema eléctrico</option>
+              <option value="NEUMATICOS">Neumáticos</option>
+              <option value="CARROCERIA">Carrocería</option>
+              <option value="AIRE_ACONDICIONADO">Aire acondicionado</option>
+              <option value="MANTENIMIENTO_PREVENTIVO">Mantenimiento preventivo</option>
+              <option value="DOCUMENTACION">Documentación</option>
+              <option value="OTRO">Otro</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Prioridad</span>
+
+            <select formControlName="prioridad">
+              <option value="">Selecciona la prioridad</option>
+              <option value="BAJA">Baja</option>
+              <option value="MEDIA">Media</option>
+              <option value="ALTA">Alta</option>
+              <option value="CRITICA">Crítica</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Odómetro al ingresar a mantenimiento (km, opcional)</span>
+
+            <input
+              type="number"
+              min="0"
+              formControlName="kilometrajeReporte"
+              placeholder="Ejemplo: 45820"
+            />
+            <small
+              >Lectura del odómetro de la unidad al ingresar. Aparecerá en el reporte; puedes
+              dejarla vacía si no la conoces.</small
+            >
+          </label>
+
+          <label class="full-width">
+            <span>Título del reporte</span>
+
+            <input
+              type="text"
+              maxlength="150"
+              formControlName="titulo"
+              placeholder="Describe brevemente la falla"
+            />
+          </label>
+
+          <label class="full-width">
+            <span>Descripción detallada</span>
+
+            <textarea
+              rows="5"
+              maxlength="1500"
+              formControlName="descripcion"
+              placeholder="Describe los síntomas o condiciones observadas"
+            ></textarea>
+          </label>
+        </div>
+
+        @if (mensajeFormulario()) {
+          <div class="form-error">
+            {{ mensajeFormulario() }}
+          </div>
+        }
+
+        <footer class="modal-actions">
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="guardando()"
+            (click)="cerrarReporte()"
+          >
+            Cancelar
+          </button>
+
+          <button type="submit" class="primary-button" [disabled]="guardando()">
+            {{ guardando() ? 'Registrando...' : 'Registrar reporte' }}
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
+
+@if (seleccionado(); as mantenimiento) {
+  <div class="modal-backdrop" (click)="cerrarAccion()">
+    <section class="modal compact" (click)="$event.stopPropagation()">
+      <header class="modal-heading">
+        <div>
+          <p>{{ mantenimiento.codigo }}</p>
+
+          <h2>
+            @if (accion() === null) {
+              Revisar mantenimiento
+            } @else if (accion() === 'EVALUAR') {
+              Evaluar falla
+            } @else if (accion() === 'REPARAR') {
+              Registrar reparación
+            } @else {
+              Cerrar mantenimiento
+            }
+          </h2>
+        </div>
+
+        <button
+          type="button"
+          class="close-button"
+          [disabled]="guardando()"
+          (click)="cerrarAccion()"
+        >
+          ×
+        </button>
+      </header>
+
+      <div class="selected-summary">
+        <div>
+          <small>Unidad</small>
+          <strong>
+            {{ mantenimiento.vehiculoPlaca }}
+          </strong>
+        </div>
+
+        <div>
+          <small>Falla reportada</small>
+          <strong>{{ mantenimiento.titulo }}</strong>
+        </div>
+      </div>
+
+      @if (accion() === null) {
+        <p role="status" class="maintenance-state" [attr.data-estado]="mantenimiento.estado">
+          Estado: {{ etiquetaEstado(mantenimiento.estado) }}
+        </p>
+        @if (mensajeFormulario()) {
+          <div class="form-error" role="alert">{{ mensajeFormulario() }}</div>
+        }
+        <div class="review-details">
+          <div class="review-grid">
+            <div>
+              <small>Unidad</small
+              ><strong
+                >{{ mantenimiento.vehiculoCodigo }} · {{ mantenimiento.vehiculoPlaca }}</strong
+              >
+            </div>
+            <div>
+              <small>Tipo de atención</small
+              ><strong>{{ etiquetaTipo(mantenimiento.tipoFalla) }}</strong>
+            </div>
+            <div>
+              <small>Kilometraje</small
+              ><strong
+                >{{ mantenimiento.kilometrajeReporte ?? 'No registrado'
+                }}{{ mantenimiento.kilometrajeReporte !== null ? ' km' : '' }}</strong
+              >
+            </div>
+            <div>
+              <small>Reportado por</small><strong>{{ mantenimiento.reportadoPorNombre }}</strong>
+            </div>
+          </div>
+          <div class="review-copy">
+            <small>Descripción</small>
+            <p>{{ mantenimiento.descripcion }}</p>
+          </div>
+          @if (mantenimiento.diagnostico) {
+            <div class="review-copy">
+              <small>Diagnóstico</small>
+              <p>{{ mantenimiento.diagnostico }}</p>
+              <span>{{
+                mantenimiento.tallerProveedor ? 'Taller: ' + mantenimiento.tallerProveedor : ''
+              }}</span>
+            </div>
+          }
+          @if (mantenimiento.trabajoRealizado) {
+            <div class="review-copy">
+              <small>Trabajo realizado</small>
+              <p>{{ mantenimiento.trabajoRealizado }}</p>
+              <span>{{
+                mantenimiento.costo !== null
+                  ? 'Costo: S/ ' + (mantenimiento.costo | number: '1.2-2')
+                  : ''
+              }}</span>
+            </div>
+          }
+        </div>
+        <footer class="modal-actions review-actions">
+          <button type="button" class="secondary-button" (click)="abrirEvidencias(mantenimiento)">
+            Evidencias
+          </button>
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="imprimirMantenimiento(mantenimiento)"
+          >
+            Imprimir reporte
+          </button>
+          @if (mantenimiento.estado === 'REPORTADO') {
+            <button
+              type="button"
+              class="primary-button"
+              (click)="abrirAccion(mantenimiento, 'EVALUAR')"
+            >
+              Evaluar falla
+            </button>
+          } @else if (mantenimiento.estado === 'EN_EVALUACION') {
+            <button
+              type="button"
+              class="primary-button"
+              [disabled]="guardando()"
+              (click)="iniciar(mantenimiento)"
+            >
+              {{ guardando() ? 'Iniciando…' : 'Iniciar atención' }}
+            </button>
+          } @else if (mantenimiento.estado === 'EN_MANTENIMIENTO') {
+            <button
+              type="button"
+              class="primary-button"
+              (click)="abrirAccion(mantenimiento, 'REPARAR')"
+            >
+              Registrar reparación
+            </button>
+          } @else if (mantenimiento.estado === 'REPARADO') {
+            <button
+              type="button"
+              class="primary-button"
+              (click)="abrirAccion(mantenimiento, 'CERRAR')"
+            >
+              Cerrar mantenimiento
+            </button>
+          }
+          <button type="button" class="primary-button" (click)="cerrarAccion()">Cerrar</button>
+        </footer>
+      } @else if (accion() === 'EVALUAR') {
+        <form [formGroup]="formularioEvaluacion">
+          <div class="form-grid">
+            <label class="full-width">
+              <span>Diagnóstico técnico</span>
+
+              <textarea
+                rows="5"
+                maxlength="1500"
+                formControlName="diagnostico"
+                placeholder="Describe el diagnóstico realizado"
+              ></textarea>
+            </label>
+
+            <label class="full-width">
+              <span>Taller o proveedor</span>
+
+              <input
+                type="text"
+                maxlength="150"
+                formControlName="tallerProveedor"
+                placeholder="Opcional"
+              />
+            </label>
+
+            <label>
+              <span>Prioridad de atención</span>
+              <select formControlName="prioridad">
+                <option value="BAJA">Baja</option>
+                <option value="MEDIA">Media</option>
+                <option value="ALTA">Alta</option>
+                <option value="CRITICA">Crítica</option>
+              </select>
+            </label>
+          </div>
+
+          @if (mensajeFormulario()) {
+            <div class="form-error">
+              {{ mensajeFormulario() }}
+            </div>
+          }
+
+          <footer class="modal-actions">
+            <button
+              type="button"
+              class="secondary-button"
+              [disabled]="guardando()"
+              (click)="cerrarAccion()"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="button"
+              class="primary-button"
+              [disabled]="guardando()"
+              (click)="evaluar()"
+            >
+              {{ guardando() ? 'Guardando...' : 'Guardar evaluación' }}
+            </button>
+          </footer>
+        </form>
+      } @else if (accion() === 'REPARAR') {
+        <form [formGroup]="formularioReparacion">
+          <div class="form-grid">
+            <label class="full-width">
+              <span>Trabajo realizado</span>
+
+              <textarea
+                rows="5"
+                maxlength="1500"
+                formControlName="trabajoRealizado"
+                placeholder="Describe la reparación realizada"
+              ></textarea>
+            </label>
+
+            <label class="full-width">
+              <span>Costo de atención (S/)</span>
+
+              <input type="number" min="0" step="0.01" formControlName="costo" placeholder="0.00" />
+            </label>
+            <div class="full-width">
+              <p>Fotografía de la reparación (opcional)</p>
+              <div class="evidence-file-options">
+                <label class="file-option">
+                  <strong>Tomar fotografía</strong>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    capture="environment"
+                    [disabled]="guardando()"
+                    (change)="seleccionarFotoReparacion($event)"
+                  />
+                </label>
+                <label class="file-option">
+                  <strong>Adjuntar fotografía</strong>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    [disabled]="guardando()"
+                    (change)="seleccionarFotoReparacion($event)"
+                  />
+                </label>
+              </div>
+              @if (fotoReparacion(); as foto) {
+                <p>{{ foto.name }}</p>
+                <button
+                  type="button"
+                  class="secondary-button"
+                  [disabled]="guardando()"
+                  (click)="fotoReparacion.set(null)"
+                >
+                  Quitar foto
+                </button>
+              }
+              <small
+                >Puedes continuar sin foto. Si la adjuntas, se incluirá como evidencia de reparación
+                en el reporte. Máximo 10 MB.</small
+              >
+            </div>
+          </div>
+
+          @if (mensajeFormulario()) {
+            <div class="form-error">
+              {{ mensajeFormulario() }}
+            </div>
+          }
+
+          <footer class="modal-actions">
+            <button
+              type="button"
+              class="secondary-button"
+              [disabled]="guardando()"
+              (click)="cerrarAccion()"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="button"
+              class="primary-button"
+              [disabled]="guardando()"
+              (click)="reparar()"
+            >
+              {{ guardando() ? 'Guardando...' : 'Registrar reparación' }}
+            </button>
+          </footer>
+        </form>
+      } @else if (accion() === 'CERRAR') {
+        <form [formGroup]="formularioCierre">
+          <div class="form-grid">
+            <label class="full-width">
+              <span>Observaciones de cierre</span>
+
+              <textarea
+                rows="5"
+                maxlength="1000"
+                formControlName="observacionesCierre"
+                placeholder="Información final de la atención"
+              ></textarea>
+            </label>
+          </div>
+
+          @if (mensajeFormulario()) {
+            <div class="form-error">
+              {{ mensajeFormulario() }}
+            </div>
+          }
+
+          <footer class="modal-actions">
+            <button
+              type="button"
+              class="secondary-button"
+              [disabled]="guardando()"
+              (click)="cerrarAccion()"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="button"
+              class="primary-button"
+              [disabled]="guardando()"
+              (click)="cerrar()"
+            >
+              {{ guardando() ? 'Cerrando...' : 'Cerrar mantenimiento' }}
+            </button>
+          </footer>
+        </form>
+      }
+    </section>
+  </div>
+}
+
+@if (mostrarEvidencias() && mantenimientoEvidencias(); as mantenimiento) {
+  <div class="modal-backdrop evidence-backdrop" (click)="cerrarEvidencias()">
+    <section class="modal evidence-modal" (click)="$event.stopPropagation()">
+      <header class="modal-heading evidence-heading">
+        <div>
+          <p>{{ mantenimiento.codigo }}</p>
+          <h2>Evidencias de mantenimiento</h2>
+          <span>
+            {{ mantenimiento.vehiculoPlaca }}
+            · {{ mantenimiento.titulo }}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          class="close-button"
+          [disabled]="subiendoEvidencia()"
+          (click)="cerrarEvidencias()"
+        >
+          ×
+        </button>
+      </header>
+
+      <div class="evidence-layout">
+        <form
+          class="evidence-form"
+          [formGroup]="formularioEvidencia"
+          (ngSubmit)="registrarEvidencia()"
+        >
+          <div class="evidence-title">
+            <div>
+              <small>Nueva evidencia</small>
+              <h3>Adjuntar archivo</h3>
+            </div>
+
+            <span>Máximo 10 MB</span>
+          </div>
+
+          <label>
+            <span>Tipo de evidencia</span>
+
+            <select formControlName="tipo">
+              @if (mantenimiento.estado === 'REPORTADO') {
+                <option value="FALLA_REPORTADA">Falla reportada</option>
+              } @else if (mantenimiento.estado === 'EN_EVALUACION') {
+                <option value="DIAGNOSTICO">Diagnóstico</option>
+              } @else if (mantenimiento.estado === 'EN_MANTENIMIENTO') {
+                <option value="REPARACION">Reparación</option>
+              } @else {
+                <option value="CONFORMIDAD">Conformidad</option>
+              }
+            </select>
+            <small class="evidence-stage-hint"
+              >La evidencia corresponde a la etapa actual del mantenimiento.</small
+            >
+          </label>
+
+          <div class="evidence-file-options">
+            <label class="file-option">
+              <strong>Tomar fotografía</strong>
+              <small>Abrir la cámara del dispositivo</small>
+
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                (change)="seleccionarArchivoEvidencia($event)"
+              />
+            </label>
+
+            <label class="file-option">
+              <strong>Seleccionar archivo</strong>
+              <small>Imagen o PDF desde el dispositivo</small>
+
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                (change)="seleccionarArchivoEvidencia($event)"
+              />
+            </label>
+          </div>
+
+          <div class="selected-file">
+            <small>Archivo seleccionado</small>
+            <strong>{{ nombreArchivoEvidencia() }}</strong>
+          </div>
+
+          <label>
+            <span>Descripción</span>
+
+            <textarea
+              rows="4"
+              maxlength="500"
+              formControlName="descripcion"
+              placeholder="Describe lo que se observa en la evidencia"
+            ></textarea>
+          </label>
+
+          @if (mensajeEvidencia()) {
+            <div class="form-error">
+              {{ mensajeEvidencia() }}
+            </div>
+          }
+
+          @if (mensajeExitoEvidencia()) {
+            <div class="message success evidence-message">
+              {{ mensajeExitoEvidencia() }}
+            </div>
+          }
+
+          <button
+            type="submit"
+            class="primary-button evidence-submit"
+            [disabled]="subiendoEvidencia() || mantenimiento.estado === 'CANCELADO'"
+          >
+            {{ subiendoEvidencia() ? 'Registrando...' : 'Registrar evidencia' }}
+          </button>
+
+          @if (mantenimiento.estado === 'CANCELADO') {
+            <small class="cancelled-help">
+              Un mantenimiento cancelado solo permite consultar sus evidencias anteriores.
+            </small>
+          }
+        </form>
+
+        <section class="evidence-history">
+          <div class="evidence-title">
+            <div>
+              <small>Trazabilidad</small>
+              <h3>Evidencias registradas</h3>
+            </div>
+
+            <span>{{ evidencias().length }} archivo(s)</span>
+          </div>
+
+          @if (cargandoEvidencias()) {
+            <div class="state-card evidence-state">
+              <span class="loader"></span>
+              <p>Cargando evidencias...</p>
+            </div>
+          } @else if (evidencias().length === 0) {
+            <div class="state-card evidence-state">
+              <h3>Aún no existen evidencias</h3>
+              <p>Las fotografías y documentos aparecerán aquí.</p>
+            </div>
+          } @else {
+            <div class="evidence-list">
+              @for (evidencia of evidencias(); track evidencia.id) {
+                <article class="evidence-card">
+                  <span class="evidence-icon" [class.document]="!esImagen(evidencia)">
+                    {{ esImagen(evidencia) ? 'IMG' : 'PDF' }}
+                  </span>
+
+                  <div class="evidence-data">
+                    <strong>
+                      {{ etiquetaEvidencia(evidencia.tipo) }}
+                    </strong>
+
+                    <small>{{ evidencia.nombreOriginal }}</small>
+
+                    @if (evidencia.descripcion) {
+                      <p>{{ evidencia.descripcion }}</p>
+                    }
+
+                    <div class="evidence-meta">
+                      <span>{{ evidencia.registradoPor }}</span>
+                      <span>
+                        {{ evidencia.fechaRegistro | date: 'dd/MM/yyyy HH:mm' }}
+                      </span>
+                      <span>
+                        {{ formatoTamanio(evidencia.tamanioBytes) }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="secondary-button view-file"
+                    (click)="verEvidencia(evidencia)"
+                  >
+                    Ver archivo
+                  </button>
+                </article>
+              }
+            </div>
+          }
+        </section>
+      </div>
+    </section>
+  </div>
+}
+
+@if (mantenimientoReporte(); as reporte) {
+  <section class="maintenance-print-report">
+    <header class="print-header">
+      <img src="assets/branding/logopalmas.webp" alt="Grupo Palmas" />
+
+      <div>
+        <small>Gestión de Transporte</small>
+        <h1>Reporte de mantenimiento</h1>
+        <p>Operación de Transporte</p>
+      </div>
+
+      <strong>{{ reporte.codigo }}</strong>
+    </header>
+
+    <div class="print-status-row">
+      <span>Estado: {{ etiquetaEstado(reporte.estado) }}</span>
+      <span>Prioridad: {{ etiquetaPrioridad(reporte.prioridad) }}</span>
+      <span>Tipo: {{ etiquetaTipo(reporte.tipoFalla) }}</span>
+    </div>
+
+    <section class="print-section">
+      <h2>Información de la unidad</h2>
+
+      <div class="print-grid">
+        <div>
+          <small>Placa</small><strong>{{ reporte.vehiculoPlaca }}</strong>
+        </div>
+        <div>
+          <small>Código</small><strong>{{ reporte.vehiculoCodigo }}</strong>
+        </div>
+        <div>
+          <small>Unidad</small><strong>{{ reporte.vehiculoDescripcion }}</strong>
+        </div>
+        <div>
+          <small>Kilometraje</small>
+          <strong>
+            {{
+              reporte.kilometrajeReporte !== null
+                ? reporte.kilometrajeReporte + ' km'
+                : 'No registrado'
+            }}
+          </strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="print-section">
+      <h2>Falla reportada</h2>
+      <strong>{{ reporte.titulo }}</strong>
+      <p>{{ reporte.descripcion }}</p>
+    </section>
+
+    @if (reporte.diagnostico) {
+      <section class="print-section">
+        <h2>Diagnóstico</h2>
+        <p>{{ reporte.diagnostico }}</p>
+        <small>Taller o proveedor</small>
+        <strong>{{ reporte.tallerProveedor || 'No registrado' }}</strong>
+      </section>
+    }
+
+    @if (reporte.trabajoRealizado) {
+      <section class="print-section">
+        <h2>Reparación realizada</h2>
+        <p>{{ reporte.trabajoRealizado }}</p>
+        <small>Costo</small>
+        <strong>
+          {{ reporte.costo !== null ? 'S/ ' + (reporte.costo | number: '1.2-2') : 'No registrado' }}
+        </strong>
+      </section>
+    }
+
+    <section class="print-section">
+      <h2>Trazabilidad</h2>
+      <div class="print-grid">
+        <div>
+          <small>Reportado por</small><strong>{{ reporte.reportadoPorNombre }}</strong>
+        </div>
+        <div>
+          <small>Fecha de reporte</small
+          ><strong>{{ reporte.fechaReporte | date: 'dd/MM/yyyy HH:mm' }}</strong>
+        </div>
+        <div>
+          <small>Inicio de atención</small
+          ><strong>{{
+            reporte.fechaInicioAtencion
+              ? (reporte.fechaInicioAtencion | date: 'dd/MM/yyyy HH:mm')
+              : 'No registrado'
+          }}</strong>
+        </div>
+        <div>
+          <small>Fecha de reparación</small
+          ><strong>{{
+            reporte.fechaReparacion
+              ? (reporte.fechaReparacion | date: 'dd/MM/yyyy HH:mm')
+              : 'No registrado'
+          }}</strong>
+        </div>
+        <div>
+          <small>Fecha de cierre</small
+          ><strong>{{
+            reporte.fechaCierre ? (reporte.fechaCierre | date: 'dd/MM/yyyy HH:mm') : 'No registrado'
+          }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="print-section print-evidence-section">
+      <h2>Evidencias registradas</h2>
+
+      @if (evidenciasReporte().length === 0) {
+        <p>No se registraron evidencias digitales.</p>
+      } @else {
+        <div class="print-evidence-gallery">
+          @for (evidencia of evidenciasReporte(); track evidencia.id) {
+            <article class="print-evidence-item" [class.document]="!esImagen(evidencia)">
+              @if (esImagen(evidencia)) {
+                @if (urlImagenReporte(evidencia.id); as imagenUrl) {
+                  <img
+                    class="print-evidence-photo"
+                    [src]="imagenUrl"
+                    [alt]="etiquetaEvidencia(evidencia.tipo)"
+                  />
+                } @else {
+                  <div class="print-image-unavailable">Imagen no disponible</div>
+                }
+              } @else {
+                <div class="print-document-icon">PDF</div>
+              }
+
+              <div class="print-evidence-information">
+                <strong>
+                  {{ etiquetaEvidencia(evidencia.tipo) }}
+                </strong>
+
+                <small>
+                  {{ evidencia.nombreOriginal }}
+                </small>
+
+                @if (evidencia.descripcion) {
+                  <p>{{ evidencia.descripcion }}</p>
+                }
+
+                <div class="print-evidence-meta">
+                  <span>
+                    Registrado por:
+                    {{ evidencia.registradoPor }}
+                  </span>
+
+                  <span>
+                    {{ evidencia.fechaRegistro | date: 'dd/MM/yyyy HH:mm' }}
+                  </span>
+
+                  <span>
+                    {{ formatoTamanio(evidencia.tamanioBytes) }}
+                  </span>
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+
+    @if (reporte.observacionesCierre) {
+      <section class="print-section">
+        <h2>Observaciones de cierre</h2>
+        <p>{{ reporte.observacionesCierre }}</p>
+      </section>
+    }
+
+    <footer class="print-footer">
+      <span>Reporte generado desde Gestión de Transporte</span>
+      <span>Grupo Palmas · Gestión de Flota</span>
+    </footer>
+  </section>
+}

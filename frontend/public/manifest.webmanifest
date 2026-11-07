@@ -1,0 +1,19 @@
+{
+  "id": "./chofer",
+  "name": "Gestión de Transporte",
+  "short_name": "Transporte",
+  "lang": "es-PE",
+  "start_url": "./chofer",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f5f7",
+  "theme_color": "#0071e3",
+  "icons": [
+    {
+      "src": "icons/palmas.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

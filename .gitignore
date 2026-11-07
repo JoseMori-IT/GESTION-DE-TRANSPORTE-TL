@@ -1,0 +1,43 @@
+﻿# Angular / Node.js
+node_modules/
+dist/
+.angular/
+coverage/
+
+# Java / Spring Boot
+target/
+build/
+.gradle/
+*.class
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Credenciales y secretos
+.env
+.env.*
+!.env.example
+*.p12
+*.pfx
+*.pem
+*.key
+
+# Logs
+*.log
+logs/
+
+# Configuraciones Spring Boot
+backend/src/main/resources/application.properties
+backend/src/main/resources/application-*.properties
+backend/src/test/resources/application.properties
+
+# Permitir plantilla de ejemplo
+!backend/src/main/resources/application-local.example.properties
+
+backend/src/main/resources/application-local.example.properties

@@ -1,0 +1,326 @@
+@if (configuracion.error()) {
+  <p class="error" role="alert">{{ configuracion.error() }}</p>
+}
+<main class="abastecimientos">
+  <header class="cabecera">
+    <div>
+      <p>Control de combustible</p>
+      <h1>Abastecimientos</h1>
+      <p>
+        Registra el diésel cargado a cada unidad y compáralo con la estimación de sus recorridos.
+      </p>
+    </div>
+    <div class="acciones">
+      <a routerLink="/reportes">Ver reportes</a>
+      @if (puedeRegistrar) {
+        <button type="button" (click)="abrir()">Registrar abastecimiento</button>
+      }
+    </div>
+  </header>
+  @if (exito()) {
+    <p class="aviso" role="status">{{ exito() }}</p>
+  }
+  <section class="filtros">
+    <label
+      >Unidad<select [ngModel]="unidad()" (ngModelChange)="unidad.set($event)">
+        <option value="TODAS">Todas las unidades</option>
+        @for (v of vehiculos(); track v.id) {
+          <option [value]="v.id">{{ v.placa }}</option>
+        }
+      </select></label
+    ><label
+      >Desde<input type="date" [ngModel]="desde()" (ngModelChange)="desde.set($event)" /></label
+    ><label
+      >Hasta<input type="date" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" /></label
+    ><button
+      class="secundario"
+      type="button"
+      (click)="desde.set(''); hasta.set(''); unidad.set('TODAS')"
+    >
+      Limpiar filtros</button
+    ><button class="secundario" type="button" [disabled]="cargando()" (click)="cargar()">
+      {{ cargando() ? 'Consultando…' : 'Actualizar' }}
+    </button>
+  </section>
+  @if (error()) {
+    <p role="alert" class="error">{{ error() }}</p>
+  } @else if (filtrosInvalidos()) {
+    <p class="error" role="alert">La fecha inicial no puede ser posterior a la final.</p>
+  } @else if (!cargando()) {
+    <div class="indicadores">
+      <article>
+        <small>Diésel abastecido</small><strong>{{ numero(resumen().galones) }} <em>gal</em></strong
+        ><span>{{ resumen().vigentes.length }} cargas vigentes · por fecha de abastecimiento</span>
+      </article>
+      <article>
+        <small>Consumo estimado de viajes</small
+        ><strong>{{ numero(estimado().galones) }} <em>gal</em></strong
+        ><span
+          >{{ configuracion.datos()?.galonesPorKm ?? 'Sin referencia' }} gal/km · viajes completados
+          por salida programada</span
+        >
+      </article>
+      <article>
+        <small>Distancia utilizada para estimar</small
+        ><strong>{{ numero(estimado().km) }} <em>km</em></strong
+        ><span
+          >{{ estimado().conOdometro }} por odómetro · {{ estimado().conRuta }} por ruta
+          estimada</span
+        >
+      </article>
+    </div>
+    <section class="grafico">
+      <h2>Abastecido y estimado por unidad</h2>
+      <p>
+        El abastecimiento no equivale al consumo real: puede quedar combustible de períodos
+        anteriores o para viajes futuros.
+      </p>
+      <div class="leyenda"><span>Azul: abastecido</span><span>Violeta: estimado</span></div>
+      @for (u of porUnidad(); track u.id) {
+        <article>
+          <strong>{{ u.placa }}</strong>
+          <div class="barra"><span [style.width.%]="(u.cargado / maxBarra()) * 100"></span></div>
+          <small>{{ numero(u.cargado) }} gal abastecidos</small>
+          <div class="barra estimado">
+            <span [style.width.%]="(u.estimado / maxBarra()) * 100"></span>
+          </div>
+          <small>{{
+            estimacionUnidad(u.id) === null
+              ? 'Sin viajes con distancia utilizable'
+              : numero(u.estimado) + ' gal estimados'
+          }}</small>
+        </article>
+      } @empty {
+        <p>No hay registros para la selección.</p>
+      }
+    </section>
+    <section class="tabla">
+      <header>
+        <h2>Historial de abastecimientos</h2>
+        <span>{{ resumen().seleccion.length }} registros</span>
+      </header>
+      <div class="desplazar">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha / unidad</th>
+              <th>Galones</th>
+              <th>Odómetro</th>
+              <th>Grifo / comprobante</th>
+              <th>Trazabilidad</th>
+              <th>Estado / acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of resumen().seleccion; track a.id) {
+              <tr>
+                <td>
+                  <strong>{{ a.placa }}</strong
+                  ><small>{{ fecha(a.fecha) }}</small>
+                </td>
+                <td>{{ numero(a.galones) }} gal</td>
+                <td>
+                  {{ a.odometroKm === null ? 'Sin lectura' : numero(a.odometroKm) + ' km' }}
+                  @if (a.motivoSinOdometro) {
+                    <small>{{ a.motivoSinOdometro }}</small>
+                  }
+                </td>
+                <td>
+                  {{ a.grifo }}<small>{{ a.comprobante || 'Sin comprobante registrado' }}</small>
+                </td>
+                <td>
+                  {{ a.registradoPor }}<small>Registrado: {{ fecha(a.fechaRegistro) }}</small>
+                  @if (a.observaciones) {
+                    <small>{{ a.observaciones }}</small>
+                  }
+                  @if (a.anulado) {
+                    <small
+                      >Anulado por {{ a.anuladoPor }} ·
+                      {{ a.fechaAnulacion ? fecha(a.fechaAnulacion) : '' }} ·
+                      {{ a.motivoAnulacion }}</small
+                    >
+                  }
+                </td>
+                <td>
+                  <span class="estado" [class.anulado]="a.anulado">{{
+                    a.anulado ? 'Anulado' : 'Registrado'
+                  }}</span>
+                  @if (!a.anulado && puedeAnular) {
+                    <button class="secundario" type="button" (click)="abrirAnulacion(a)">
+                      Anular
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6">No hay abastecimientos registrados en este período.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <p class="nota">
+      Referencia operativa: {{ configuracion.datos()?.galonesPorKm ?? 'Sin referencia' }} galones
+      estadounidenses por kilómetro para todas las unidades, indicada por la operación. No es una
+      medición del rendimiento real ni del saldo en tanque. El odómetro del abastecimiento se
+      conserva como evidencia; no reemplaza la última lectura de la unidad. No se calcula un costo
+      sin registrar precios.
+    </p>
+  }
+</main>
+@if (modal() || anulando()) {
+  <dialog
+    #dialogo
+    class="modal"
+    aria-labelledby="abastecimiento-titulo"
+    (cancel)="$event.preventDefault(); cerrar()"
+  >
+    <header>
+      <div>
+        <p>Control de combustible</p>
+        <h2 id="abastecimiento-titulo">
+          {{ anulando() ? 'Anular abastecimiento' : 'Registrar abastecimiento' }}
+        </h2>
+      </div>
+      <button
+        type="button"
+        class="cerrar secundario"
+        aria-label="Cerrar formulario de abastecimiento"
+        [disabled]="guardando()"
+        (click)="cerrar()"
+      >
+        ×
+      </button>
+    </header>
+    @if (anulando(); as a) {
+      <form #anulacion="ngForm" (ngSubmit)="confirmarAnulacion()">
+        <p>
+          Se anulará la carga de <strong>{{ numero(a.galones) }} gal</strong> de la unidad
+          <strong>{{ a.placa }}</strong
+          >. Se conservará el registro original y dejará de sumar en los indicadores.
+        </p>
+        <label
+          >Motivo de anulación<textarea
+            name="motivo"
+            [(ngModel)]="motivoAnulacion"
+            minlength="5"
+            maxlength="300"
+            required
+          ></textarea>
+        </label>
+        @if (errorFormulario()) {
+          <p class="error" role="alert">{{ errorFormulario() }}</p>
+        }
+        <footer>
+          <button type="button" class="secundario" [disabled]="guardando()" (click)="cerrar()">
+            Cancelar</button
+          ><button type="submit" [disabled]="guardando() || anulacion.invalid">
+            {{ guardando() ? 'Guardando…' : 'Confirmar anulación' }}
+          </button>
+        </footer>
+      </form>
+    } @else {
+      <form #registro="ngForm" (ngSubmit)="guardar()">
+        <div class="campos">
+          <label
+            >Unidad<select
+              name="vehiculo"
+              [(ngModel)]="datos.vehiculoId"
+              (ngModelChange)="seleccionarUnidad()"
+              required
+            >
+              <option [ngValue]="null">Selecciona una unidad</option>
+              @for (v of unidadesRegistro(); track v.id) {
+                <option [ngValue]="v.id">{{ v.placa }} · {{ v.marca }} {{ v.modelo }}</option>
+              }
+            </select></label
+          ><label
+            >Fecha y hora de abastecimiento<input
+              type="datetime-local"
+              name="fecha"
+              [(ngModel)]="datos.fecha"
+              [max]="maxFecha()"
+              required /></label
+          ><label
+            >Diésel cargado (galones)<input
+              type="number"
+              name="galones"
+              [(ngModel)]="datos.galones"
+              min="0.001"
+              max="10000"
+              step="0.001"
+              required
+              placeholder="Ej. 25.5" /></label
+          ><label
+            >Grifo<input
+              name="grifo"
+              [(ngModel)]="datos.grifo"
+              maxlength="150"
+              required
+              placeholder="Nombre del establecimiento"
+          /></label>
+        </div>
+        <label class="check"
+          ><input type="checkbox" name="sinOdometro" [(ngModel)]="sinOdometro" />No se dispone de
+          lectura del odómetro</label
+        >
+        @if (sinOdometro) {
+          <label
+            >Motivo<textarea
+              name="motivoOdometro"
+              [(ngModel)]="datos.motivoSinOdometro"
+              minlength="5"
+              maxlength="300"
+              required
+              placeholder="Ej. tablero averiado"
+            ></textarea>
+          </label>
+        } @else {
+          <label
+            >Odómetro al abastecer (km)<input
+              name="odometro"
+              type="number"
+              [(ngModel)]="datos.odometroKm"
+              min="0"
+              max="99999999.99"
+              step="0.01"
+              required /></label
+          ><small
+            >Verifica la lectura actual. La última lectura registrada se muestra como
+            referencia.</small
+          >
+        }
+        <label
+          >Número de comprobante (opcional)<input
+            name="comprobante"
+            [(ngModel)]="datos.comprobante"
+            maxlength="100"
+            placeholder="Boleta, factura o ticket" /></label
+        ><label
+          >Observaciones (opcional)<textarea
+            name="observaciones"
+            [(ngModel)]="datos.observaciones"
+            maxlength="500"
+          ></textarea>
+        </label>
+        <p class="nota">
+          Se registra combustible cargado, sin modificar el odómetro base de la unidad. La
+          referencia de estimación es
+          {{ configuracion.datos()?.galonesPorKm ?? 'Sin referencia' }} gal/km.
+        </p>
+        @if (errorFormulario()) {
+          <p class="error" role="alert">{{ errorFormulario() }}</p>
+        }
+        <footer>
+          <button type="button" class="secundario" [disabled]="guardando()" (click)="cerrar()">
+            Cancelar</button
+          ><button type="submit" [disabled]="guardando() || registro.invalid">
+            {{ guardando() ? 'Guardando…' : 'Guardar abastecimiento' }}
+          </button>
+        </footer>
+      </form>
+    }
+  </dialog>
+}

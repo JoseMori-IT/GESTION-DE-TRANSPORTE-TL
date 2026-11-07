@@ -1,0 +1,744 @@
+<div class="chofer-page">
+  <dialog
+    #asignacionDialog
+    class="assignment-dialog"
+    aria-labelledby="assignment-title"
+    (cancel)="cerrarAviso()"
+    (close)="cerrarAviso()"
+  >
+    @if (avisoViaje(); as viaje) {
+      <p class="assignment-greeting">Bienvenido, {{ primerNombre() }}</p>
+      <h2 id="assignment-title">
+        {{
+          estadoViajeVisible(viaje) === 'EN CURSO'
+            ? 'Tu viaje está en curso'
+            : 'Tienes un viaje asignado'
+        }}
+      </h2>
+      <dl>
+        <div>
+          <dt>Destino</dt>
+          <dd>{{ destinoActual(viaje) }}</dd>
+        </div>
+        <div>
+          <dt>Unidad</dt>
+          <dd>{{ viaje.vehiculo.placa }}</dd>
+        </div>
+        <div>
+          <dt>Salida prevista</dt>
+          <dd>
+            {{
+              viaje.fechaHoraSalida
+                ? (viaje.fechaHoraSalida | date: 'dd/MM/yyyy HH:mm')
+                : 'Consulta la programación'
+            }}
+          </dd>
+        </div>
+      </dl>
+      <p>Revisa el recorrido antes de iniciar. Abrir este aviso no inicia el viaje.</p>
+      <div class="assignment-buttons">
+        <button type="button" (click)="cerrarAviso()">Cerrar</button>
+        <button type="button" class="assignment-primary" autofocus (click)="cerrarAviso(true)">
+          Ver mi viaje
+        </button>
+      </div>
+    }
+  </dialog>
+  <main class="content" [class.solo-historial]="mostrarHistorial()" aria-label="Panel del chofer">
+    <section class="welcome">
+      <div>
+        <p>Gestión del transporte</p>
+        <h1>{{ mostrarHistorial() ? 'Historial de viajes' : 'Bienvenido, ' + primerNombre() }}</h1>
+        <span>
+          {{
+            mostrarHistorial()
+              ? 'Consulta tus viajes completados y cancelados.'
+              : 'Revisa tu destino y marca cada paso del viaje.'
+          }}
+        </span>
+      </div>
+    </section>
+
+    @if (!mostrarHistorial()) {
+      <div class="driver-sync-status" role="status">
+        <div>
+          <strong>{{
+            sincronizando()
+              ? 'Enviando registros…'
+              : !colaRevisada()
+                ? 'Revisando registros del teléfono…'
+                : marcacionesPendientes().length + fotosPendientes() > 0
+                  ? 'Guardado en este teléfono. Pendiente de enviar.'
+                  : 'No hay registros pendientes de enviar'
+          }}</strong>
+          @if (marcacionesPendientes().length + fotosPendientes() > 0) {
+            <span
+              >{{ marcacionesPendientes().length }} marcaciones y {{ fotosPendientes() }} archivos.
+              Se enviarán cuando la aplicación alcance el servidor.</span
+            >
+          } @else if (usandoCopiaLocal()) {
+            <span>Estás usando el viaje guardado. Puedes seguir marcando sin conexión.</span>
+          }
+        </div>
+        @if (esAccesoLocal) {
+          <button type="button" (click)="irAutenticacion()">Iniciar sesión para enviar</button>
+        } @else if (marcacionesPendientes().length + fotosPendientes() > 0) {
+          <button type="button" [disabled]="sincronizando()" (click)="sincronizarMarcaciones()">
+            Enviar ahora
+          </button>
+        }
+      </div>
+      <section class="phone-preparation" aria-labelledby="phone-preparation-title">
+        <div class="phone-preparation-main">
+          <div>
+            <h2 id="phone-preparation-title">
+              {{
+                cargando() || preparandoAcceso()
+                  ? 'Guardando tu viaje…'
+                  : usandoCopiaLocal()
+                    ? 'Estás usando tu viaje guardado'
+                    : errorDescarga() || !archivosDesbloqueados()
+                      ? 'Revisa el guardado del viaje'
+                      : 'Tu viaje se guarda automáticamente'
+              }}
+            </h2>
+            <p>
+              {{
+                cargando() || preparandoAcceso()
+                  ? 'Espera mientras guardamos el recorrido y protegemos tus archivos.'
+                  : 'No necesitas descargarlo ni preparar el teléfono manualmente. Al ingresar con acceso a planta, lo guardamos en este dispositivo.'
+              }}
+            </p>
+            @if (!cargando() && !preparandoAcceso() && fechaDescarga()) {
+              <p>Último guardado: {{ fechaDescarga() | date: 'dd/MM/yyyy HH:mm' }}</p>
+            }
+            @if (!cargando() && !preparandoAcceso()) {
+              <p role="status">{{ estadoPwa() }}</p>
+            }
+          </div>
+          @if (
+            errorDescarga() ||
+            (!archivosDesbloqueados() && !necesitaMigracion() && !cargando() && !preparandoAcceso())
+          ) {
+            <button
+              type="button"
+              [disabled]="preparandoTelefono() || cargando() || preparandoAcceso()"
+              (click)="prepararTelefono()"
+            >
+              {{ preparandoTelefono() ? 'Reintentando…' : 'Reintentar guardado' }}
+            </button>
+          }
+        </div>
+        @if (resultadoPreparacion()) {
+          <p class="phone-preparation-result" role="status">{{ resultadoPreparacion() }}</p>
+        }
+        @if (
+          necesitaMigracion() ||
+          errorDescarga() ||
+          (!archivosDesbloqueados() && mensajeAccesoLocal())
+        ) {
+          <details
+            class="device-settings phone-preparation-problem"
+            [open]="configuracionDispositivo()"
+            (toggle)="configuracionDispositivo.set($any($event.target).open)"
+          >
+            <summary>Revisar problema</summary>
+            <section class="trip-preparation">
+              @if (errorDescarga()) {
+                <p role="alert">{{ errorDescarga() }}</p>
+              }
+              @if (necesitaMigracion()) {
+                <p>
+                  Hay archivos protegidos con la versión anterior. Introduce la frase antigua una
+                  sola vez para conservarlos. No se pide una contraseña nueva.
+                </p>
+                <label for="local-trip-phrase">Frase anterior</label>
+                <input
+                  id="local-trip-phrase"
+                  type="password"
+                  autocomplete="off"
+                  [value]="fraseLocal()"
+                  (input)="fraseLocal.set($any($event.target).value)"
+                />
+                <button
+                  type="button"
+                  [disabled]="preparandoAcceso() || !fraseLocal() || esAccesoLocal"
+                  (click)="prepararAccesoLocal()"
+                >
+                  Migrar archivos anteriores
+                </button>
+                <p>
+                  Si olvidaste la frase antigua, no borres los datos del dispositivo. Esos archivos
+                  no pueden descifrarse sin ella.
+                </p>
+              }
+              @if (mensajeAccesoLocal()) {
+                <p role="status">{{ mensajeAccesoLocal() }}</p>
+              }
+              <p>{{ estadoPwa() }}</p>
+            </section>
+          </details>
+        }
+      </section>
+    }
+    @if (!cargando() && mostrarHistorial()) {
+      <section class="summary" aria-label="Resumen de mis servicios">
+        <article class="summary-card">
+          <small>Historial de servicios</small><strong>{{ serviciosFinalizados().length }}</strong
+          ><span>Completados y cancelados</span>
+        </article>
+      </section>
+    }
+    @if (mensajeExito()) {
+      <div class="message success">
+        {{ mensajeExito() }}
+      </div>
+    }
+
+    @if (mensajeError()) {
+      <div class="message error">
+        {{ mensajeError() }}
+      </div>
+    }
+
+    @if (mostrarHistorial() && (marcacionesPendientes().length > 0 || fotosPendientes() > 0)) {
+      <div class="sync-card">
+        <div>
+          <strong>
+            {{ marcacionesPendientes().length }} marcación(es) y {{ fotosPendientes() }} archivo(s)
+            pendiente(s)
+          </strong>
+          <span>
+            Permanecen guardadas en este celular hasta que el servidor confirme su recepción.
+          </span>
+        </div>
+        <button
+          type="button"
+          [disabled]="sincronizando() || esAccesoLocal"
+          (click)="sincronizarMarcaciones()"
+        >
+          {{ sincronizando() ? 'Sincronizando...' : 'Sincronizar ahora' }}
+        </button>
+      </div>
+    }
+
+    @if (cargando()) {
+      <section class="loading-card">
+        <span class="loader"></span>
+        <p>Cargando tus servicios asignados...</p>
+      </section>
+    } @else {
+      <section class="section-heading" id="servicios-pendientes">
+        <div>
+          <p>Viajes asignados</p>
+          <h2>Tu recorrido</h2>
+        </div>
+
+        <span class="counter">
+          {{ serviciosPendientes().length }}
+        </span>
+      </section>
+
+      @if (serviciosPendientes().length === 0) {
+        <section class="empty-card">
+          <h3>No tienes servicios pendientes</h3>
+          <p>Cuando te asignen un nuevo traslado aparecerá en esta sección.</p>
+        </section>
+      } @else {
+        <section class="service-grid">
+          @for (servicio of serviciosPendientes(); track servicio.id) {
+            <article
+              class="service-card"
+              [id]="'viaje-' + servicio.id"
+              [class.in-progress]="estadoViajeVisible(servicio) === 'EN CURSO'"
+            >
+              <div class="card-header">
+                <div>
+                  <small>{{ servicio.codigo }} · {{ servicio.vehiculo.placa }}</small>
+                  <h3>{{ destinoActual(servicio) }}</h3>
+                  <p class="driver-current-step">{{ estadoPaso(servicio) }}</p>
+                </div>
+
+                <span
+                  class="status"
+                  [class.programmed]="estadoViajeVisible(servicio) === 'PROGRAMADO'"
+                  [class.progress]="estadoViajeVisible(servicio) === 'EN CURSO'"
+                >
+                  {{ estadoViajeVisible(servicio) }}
+                </span>
+              </div>
+
+              <app-incidencia-viaje
+                [servicio]="servicio"
+                [chofer]="true"
+                (actualizado)="actualizarIncidencia($event)"
+              />
+              <details class="driver-trip-details">
+                <summary>Ver paradas, recorrido y datos del viaje</summary>
+                @if (servicio.estado === 'EN_CURSO') {
+                  <div class="trip-alert">
+                    <span class="trip-pulse"></span>
+
+                    <div>
+                      <strong>Traslado en curso</strong>
+                      <small> El camión se encuentra transportando carga. </small>
+                    </div>
+                  </div>
+                }
+
+                <app-avance-viaje [servicio]="servicio" [pendientes]="marcacionesPendientes()" />
+                <div class="route">
+                  <div class="route-point">
+                    <span class="point origin"></span>
+
+                    <div>
+                      <small>Origen</small>
+                      <strong>{{ servicio.origenDescripcion }}</strong>
+                    </div>
+                  </div>
+
+                  <div class="route-line"></div>
+
+                  <div class="route-point">
+                    <span class="point destination"></span>
+
+                    <div>
+                      <small>Destino</small>
+                      <strong>{{ servicio.destinoDescripcion }}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="details">
+                  <div class="detail">
+                    <small>Camión</small>
+                    <strong>{{ servicio.vehiculo.placa }}</strong>
+                    <span>
+                      {{ servicio.vehiculo.marca }}
+                      {{ servicio.vehiculo.modelo }}
+                    </span>
+                  </div>
+
+                  <div class="detail">
+                    <small>Producto transportado</small>
+                    <strong>
+                      {{ nombreProducto(servicio.productoTransportado) }}
+                    </strong>
+
+                    @if (
+                      servicio.productoTransportado === 'RESIDUOS_VARIOS' &&
+                      servicio.descripcionResiduos
+                    ) {
+                      <span>
+                        {{ servicio.descripcionResiduos }}
+                      </span>
+                    }
+                  </div>
+
+                  <div class="detail">
+                    <small>Salida prevista</small>
+
+                    <strong>
+                      @if (servicio.fechaHoraSalida) {
+                        {{ servicio.fechaHoraSalida.replace('T', ' ').slice(0, 16) }}
+                      } @else {
+                        Sin hora prevista
+                      }
+                    </strong>
+                  </div>
+
+                  @if (servicio.fechaHoraSalidaReal) {
+                    <div class="detail full-width">
+                      <small>Salida real registrada</small>
+                      <strong>
+                        {{ servicio.fechaHoraSalidaReal.replace('T', ' ').slice(0, 16) }}
+                      </strong>
+                    </div>
+                  }
+
+                  @if (servicio.observaciones) {
+                    <div class="detail full-width">
+                      <small>Observaciones</small>
+                      <span>{{ servicio.observaciones }}</span>
+                    </div>
+                  }
+                </div>
+              </details>
+              @if (requiereOdometro(servicio)) {
+                <section class="lectura-viaje" aria-label="Lectura del odómetro">
+                  <h3>
+                    {{
+                      siguienteMarcacion(servicio) === 'SALIDA_IDA'
+                        ? 'Odómetro de salida'
+                        : 'Odómetro al regresar'
+                    }}
+                  </h3>
+                  @if (referenciaOdometro(servicio).km != null) {
+                    <p>
+                      Última lectura válida de la unidad:
+                      <strong>{{ referenciaOdometro(servicio).km }} km</strong>
+                    </p>
+                  } @else {
+                    <p>
+                      Esta unidad aún no tiene una lectura base. Tu lectura se conservará como
+                      referencia.
+                    </p>
+                  }
+                  <label class="excepcion-lectura"
+                    ><input
+                      type="checkbox"
+                      [checked]="sinOdometro(servicio)"
+                      (change)="sinLecturaOdometro[servicio.id] = $any($event.target).checked"
+                      [disabled]="procesandoId() !== null"
+                    />
+                    No puedo registrar el kilometraje: odómetro averiado</label
+                  >
+                  @if (sinOdometro(servicio)) {
+                    <label [for]="'motivo-km-' + servicio.id">¿Qué ocurrió con el odómetro?</label
+                    ><textarea
+                      [id]="'motivo-km-' + servicio.id"
+                      maxlength="300"
+                      rows="2"
+                      [value]="motivosOdometro[servicio.id] ?? ''"
+                      (input)="motivosOdometro[servicio.id] = $any($event.target).value"
+                      [disabled]="procesandoId() !== null"
+                      placeholder="Ej. El tablero no muestra el kilometraje"
+                    ></textarea
+                    ><small
+                      >Se conservará la última lectura válida. Los kilómetros serán estimados por
+                      ruta y el coordinador verá el motivo.</small
+                    >
+                  } @else {
+                    <label [for]="'lectura-km-' + servicio.id">Lectura del tablero (km)</label
+                    ><input
+                      [id]="'lectura-km-' + servicio.id"
+                      type="number"
+                      min="0"
+                      max="99999999.99"
+                      step="0.01"
+                      inputmode="decimal"
+                      [value]="lecturasOdometro[servicio.id] ?? ''"
+                      (input)="cambiarOdometro(servicio.id, $event)"
+                      placeholder="Ingresa lo que muestra el tablero"
+                      [disabled]="procesandoId() !== null"
+                    />
+                    @if (lecturaSalida(servicio) != null) {
+                      <small
+                        >Salida del viaje: {{ lecturaSalida(servicio) }} km. Al regresar, la lectura
+                        debe ser mayor.</small
+                      >
+                    } @else {
+                      <small
+                        >La salida puede ser igual a la última lectura válida si la unidad no se ha
+                        movido.</small
+                      >
+                    }
+                  }
+                </section>
+              }
+              <div class="actions">
+                <button
+                  type="button"
+                  class="evidence-button"
+                  [disabled]="procesandoId() !== null"
+                  (click)="abrirEvidencias(servicio)"
+                >
+                  Fotografías y documentos
+                </button>
+                @if (siguienteMarcacion(servicio); as siguiente) {
+                  <button
+                    type="button"
+                    class="primary-button"
+                    [disabled]="procesandoId() !== null"
+                    (click)="registrarSiguienteMarcacion(servicio)"
+                  >
+                    @if (procesandoId() === servicio.id) {
+                      Guardando tu marcación…
+                    } @else {
+                      {{ etiquetaAccion(servicio) }}
+                    }
+                  </button>
+                }
+
+                @if (servicio.estado === 'EN_CURSO') {}
+
+                @if (tienePendiente(servicio.id)) {
+                  <span class="pending-badge"> Guardado sin conexión </span>
+                }
+              </div>
+              @if (!archivosDesbloqueados()) {
+                <p class="driver-photo-help">
+                  La protección de fotografías necesita atención.
+                  <button type="button" (click)="configuracionDispositivo.set(true)">
+                    Revisar configuración</button
+                  >. Tus marcas y archivos existentes se conservan.
+                </p>
+              }
+            </article>
+          }
+        </section>
+      }
+
+      <section class="section-heading history-heading" id="historial-servicios">
+        <div>
+          <p>Actividad anterior</p>
+          <h2>Historial de servicios</h2>
+        </div>
+
+        <span class="counter secondary">
+          {{ serviciosFinalizados().length }}
+        </span>
+      </section>
+
+      @if (serviciosFinalizados().length === 0) {
+        <section class="empty-card compact">
+          <p>Todavía no existen servicios finalizados.</p>
+        </section>
+      } @else {
+        <app-historial-viajes
+          [viajes]="serviciosFinalizados()"
+          (evidencias)="abrirEvidencias($event)"
+          (actualizado)="actualizarIncidencia($event)"
+        />
+      }
+    }
+  </main>
+</div>
+
+@if (mostrarEvidencias() && servicioSeleccionado(); as servicio) {
+  <div class="evidence-overlay" role="presentation" (click)="cerrarEvidencias()">
+    <section
+      class="evidence-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="chofer-evidence-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="evidence-header">
+        <div>
+          <small>{{ servicio.codigo }}</small>
+          <h2 id="chofer-evidence-title">Evidencias digitales</h2>
+          <p>
+            {{ servicio.vehiculo.placa }} · {{ servicio.origenDescripcion }} →
+            {{ servicio.destinoDescripcion }}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="modal-close"
+          aria-label="Cerrar"
+          [disabled]="guardandoEvidencia()"
+          (click)="cerrarEvidencias()"
+        >
+          ×
+        </button>
+      </header>
+
+      <div class="evidence-content">
+        @if (puedeRegistrarEvidencia()) {
+          <form
+            class="evidence-form"
+            [formGroup]="formularioEvidencia"
+            (ngSubmit)="registrarEvidencia()"
+          >
+            @if (formularioEvidencia.controls.tipo.value === 'FOTO_INICIO') {
+              <div class="departure-photo-note">
+                <strong>Tu salida está registrada</strong>
+                <p>
+                  La foto de salida es opcional. Si no deseas adjuntarla, cierra esta ventana con la
+                  X.
+                </p>
+              </div>
+            }
+            <div class="form-heading">
+              <div>
+                <small>Nueva evidencia</small>
+                <h3>Adjuntar archivo</h3>
+              </div>
+              <span>Máximo 10 MB</span>
+            </div>
+
+            <label class="field">
+              <span>Tipo de evidencia</span>
+              <select formControlName="tipo">
+                <option value="FOTO_AVERIA">Fotografía de avería (opcional)</option>
+                <option value="FOTO_INICIO">Fotografía de salida (opcional)</option>
+                <option value="FOTO_CARGA">Fotografía de carga</option>
+                <option value="FOTO_ENTREGA">Fotografía de entrega</option>
+                <option value="DOCUMENTO">Documento</option>
+              </select>
+            </label>
+
+            <div class="file-options">
+              <label class="file-option camera">
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  (change)="seleccionarArchivo($event)"
+                />
+                <strong>Tomar fotografía</strong>
+                <small>Abrir la cámara del dispositivo</small>
+              </label>
+
+              <label class="file-option">
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp,.pdf"
+                  (change)="seleccionarArchivo($event)"
+                />
+                <strong>Seleccionar archivo</strong>
+                <small>Imagen o PDF desde el dispositivo</small>
+              </label>
+            </div>
+
+            @if (nombreArchivo()) {
+              <div class="selected-file">
+                <span>Archivo seleccionado</span>
+                <strong>{{ nombreArchivo() }}</strong>
+              </div>
+            }
+
+            <label class="field">
+              <span>Descripción</span>
+              <textarea
+                formControlName="descripcion"
+                rows="3"
+                maxlength="500"
+                placeholder="Describe la evidencia registrada"
+              ></textarea>
+            </label>
+
+            <div class="location-section">
+              <div>
+                <strong>Ubicación GPS</strong>
+                <small>Opcional para fotografías y documentos</small>
+              </div>
+
+              <button
+                type="button"
+                class="location-button"
+                [disabled]="obteniendoUbicacion()"
+                (click)="obtenerUbicacionActual()"
+              >
+                {{ obteniendoUbicacion() ? 'Obteniendo...' : 'Usar ubicación actual' }}
+              </button>
+            </div>
+
+            @if (
+              formularioEvidencia.controls.latitud.value !== null &&
+              formularioEvidencia.controls.longitud.value !== null
+            ) {
+              <div class="location-result">
+                <span>
+                  {{ formularioEvidencia.controls.latitud.value }},
+                  {{ formularioEvidencia.controls.longitud.value }}
+                </span>
+                <button type="button" (click)="quitarUbicacion()">Quitar</button>
+              </div>
+            }
+
+            @if (mensajeEvidencia()) {
+              <div class="evidence-message">
+                {{ mensajeEvidencia() }}
+              </div>
+            }
+
+            <button type="submit" class="primary-button" [disabled]="guardandoEvidencia()">
+              {{ guardandoEvidencia() ? 'Guardando evidencia...' : 'Registrar evidencia' }}
+            </button>
+          </form>
+        } @else {
+          <div class="evidence-readonly">
+            @if (servicioSeleccionado()?.estado === 'PROGRAMADO') {
+              <strong>Primero registra tu salida</strong>
+              <p>
+                Vuelve al viaje y pulsa Iniciar viaje. Después podrás adjuntar una fotografía de
+                salida si lo deseas. La foto es opcional y no impide iniciar el recorrido.
+              </p>
+              <button type="button" class="primary-button" (click)="cerrarEvidencias()">
+                Volver a mi viaje
+              </button>
+            } @else {
+              <strong>Registro cerrado</strong>
+              <p>
+                Este viaje ya no admite nuevas evidencias. Puedes consultar las fotografías y
+                documentos registrados.
+              </p>
+            }
+          </div>
+        }
+
+        <section class="evidence-history">
+          <div class="evidence-history-heading">
+            <div>
+              <small>Trazabilidad</small>
+              <h3>Evidencias registradas</h3>
+            </div>
+            <span>{{ evidencias().length }} archivo(s)</span>
+          </div>
+
+          @if (cargandoEvidencias()) {
+            <div class="evidence-empty">Cargando evidencias...</div>
+          } @else if (evidencias().length === 0) {
+            <div class="evidence-empty">
+              <strong>Aún no existen evidencias</strong>
+              <p>Las fotografías y documentos aparecerán aquí.</p>
+            </div>
+          } @else {
+            <div class="evidence-list">
+              @for (evidencia of evidencias(); track evidencia.id) {
+                <article class="evidence-item">
+                  <div class="evidence-type-icon">
+                    @if (evidencia.tipo === 'DOCUMENTO') {
+                      PDF
+                    } @else if (evidencia.tipo === 'CONFORMIDAD') {
+                      ✓
+                    } @else {
+                      IMG
+                    }
+                  </div>
+
+                  <div class="evidence-information">
+                    <strong>
+                      {{ etiquetaTipoEvidencia(evidencia.tipo) }}
+                    </strong>
+                    <span>{{ evidencia.nombreOriginal }}</span>
+
+                    @if (evidencia.descripcion) {
+                      <p>{{ evidencia.descripcion }}</p>
+                    }
+
+                    @if (evidencia.nombreResponsable) {
+                      <small>
+                        Responsable: {{ evidencia.nombreResponsable }} ·
+                        {{ evidencia.documentoResponsable }}
+                      </small>
+                    }
+
+                    @if (evidencia.latitud !== null && evidencia.longitud !== null) {
+                      <small>
+                        GPS: {{ evidencia.latitud }},
+                        {{ evidencia.longitud }}
+                      </small>
+                    }
+
+                    <footer>
+                      <span>{{ formatearFecha(evidencia.fechaRegistro) }}</span>
+                      <span>{{ formatearTamano(evidencia.tamanoBytes) }}</span>
+                    </footer>
+                  </div>
+
+                  <button type="button" class="view-file-button" (click)="abrirArchivo(evidencia)">
+                    Ver
+                  </button>
+                </article>
+              }
+            </div>
+          }
+        </section>
+      </div>
+    </section>
+  </div>
+}

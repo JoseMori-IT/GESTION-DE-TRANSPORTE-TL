@@ -1,0 +1,189 @@
+@if (!datos().configurada) {
+  <p role="alert">
+    Configuración no disponible. Actualiza la página para consultar las estimaciones.
+  </p>
+} @else {
+  <section class="consumo" aria-label="Consumo de diésel y emisiones estimadas">
+    <header>
+      <div>
+        <span class="sobre"
+          >Todas las unidades · recorridos completados, incluidos auxilios anteriores</span
+        >
+        <h3>Diésel y CO₂ estimados</h3>
+      </div>
+      <span class="referencia">Referencia interna · no es consumo medido</span>
+    </header>
+    <div class="resumen-consumo">
+      <article>
+        <small>Distancia utilizada</small><strong>{{ numero(datos().km) }} <em>km</em></strong
+        ><span>{{ datos().conOdometro }} viajes por odómetro · {{ datos().conRuta }} por ruta</span>
+      </article>
+      <article>
+        <small>Diésel estimado</small><strong>{{ numero(datos().galones, 2) }} <em>gal</em></strong
+        ><span>{{ numero(datos().referencia.galonesPorKm, 6) }} gal/km</span>
+      </article>
+      <article>
+        <small>Emisiones estimadas de CO₂</small
+        ><strong>{{ numero(datos().co2, 2) }} <em>kg CO₂</em></strong
+        ><span
+          >{{ numero(datos().referencia.kgCo2PorKm, 6) }} kg CO₂/km · aproximación interna</span
+        >
+      </article>
+    </div>
+    <div class="graficos-consumo">
+      <article class="grafico-consumo mensual" [class.anual]="meses().length > 6">
+        <h4>Diésel estimado por mes</h4>
+        <p>Galones · agrupados por salida programada</p>
+        <div class="meses">
+          @for (m of meses(); track m.clave) {
+            <div class="fila">
+              <div class="etiquetas">
+                <span>{{ mes(m.clave) }}</span
+                ><b>{{ m.viajes ? numero(m.galones, 2) + ' gal' : 'Sin estimación' }}</b>
+              </div>
+              <div
+                class="pista"
+                role="img"
+                [attr.aria-label]="
+                  mes(m.clave) + ': ' + numero(m.galones, 2) + ' galones estimados'
+                "
+              >
+                <span
+                  class="odo"
+                  [style.width.%]="ancho(m.kmOdometro * datos().referencia.galonesPorKm, meses())"
+                ></span
+                ><span
+                  class="ruta"
+                  [style.width.%]="ancho(m.kmRuta * datos().referencia.galonesPorKm, meses())"
+                ></span>
+              </div>
+              <small
+                >{{ m.viajes }} viajes con datos ·
+                {{ m.viajes ? numero(m.co2, 2) + ' kg CO₂' : 'Sin estimación' }}
+                @if (m.excluidos) {
+                  · {{ m.excluidos }} sin estimar
+                }
+              </small>
+            </div>
+          } @empty {
+            <p class="vacio">Sin viajes completados con distancia utilizable.</p>
+          }
+        </div>
+        <div class="leyenda">
+          <span><i class="odo"></i>Base: odómetro</span
+          ><span><i class="ruta"></i>Base: ruta estimada</span>
+        </div>
+        @if (datos().porMes.length > 12) {
+          <small
+            >Gráfico: últimos 12 meses de la selección. Los totales incluyen todo el período.</small
+          >
+        }
+      </article>
+      <article class="grafico-consumo">
+        <h4>Diésel estimado por unidad</h4>
+        <p>
+          Galones ·
+          {{
+            datos().porUnidad.length > 8
+              ? '8 unidades con mayor estimación'
+              : 'unidades de la selección'
+          }}
+        </p>
+        @for (u of unidades(); track u.clave) {
+          <div class="fila">
+            <div class="etiquetas">
+              <span>{{ u.nombre }}</span
+              ><b>{{ numero(u.galones, 2) }} gal</b>
+            </div>
+            <div class="pista">
+              <span
+                class="odo"
+                [style.width.%]="ancho(u.kmOdometro * datos().referencia.galonesPorKm, unidades())"
+              ></span
+              ><span
+                class="ruta"
+                [style.width.%]="ancho(u.kmRuta * datos().referencia.galonesPorKm, unidades())"
+              ></span>
+            </div>
+            <small>{{ numero(u.km) }} km · {{ numero(u.co2, 2) }} kg CO₂ estimados</small>
+          </div>
+        } @empty {
+          <p class="vacio">Sin distancias utilizables por unidad.</p>
+        }
+      </article>
+    </div>
+    <div class="control">
+      <strong
+        >Cobertura: {{ datos().incluidos.length }} de {{ datos().cerrados.length }} viajes
+        completados</strong
+      ><span
+        >{{ datos().revision.length }} por revisar · {{ datos().sinDatos.length }} sin distancia ·
+        {{ datos().sinReferencia.length }} sin referencia · {{ datos().auxilios }} auxilios
+        incluidos.</span
+      ><span
+        >Odómetro: {{ numero(datos().kmOdometro) }} km. Ruta estimada:
+        {{ numero(datos().kmRuta) }} km. Los viajes en curso, programados, cancelados o
+        interrumpidos no se extrapolan al recorrido completo.</span
+      >
+    </div>
+    <p class="metodo">
+      Estimación de recorridos; los abastecimientos se consultan por separado. Usa odómetro
+      coherente; si faltan lecturas, utiliza la ruta planificada. Lecturas inconsistentes quedan
+      excluidas hasta revisión. No incluye consumo adicional al ralentí ni otros movimientos no
+      registrados.
+    </p>
+    <details>
+      <summary>Referencia y registros utilizados</summary>
+      <p>
+        {{ datos().referencia.version }} · definida el {{ datos().referencia.fecha }}.
+        {{ datos().referencia.fuente }} Se aplica como escenario de referencia a toda la selección;
+        no representa una medición histórica de combustible ni una huella de carbono completa.
+      </p>
+      <p>
+        Regla de revisión: odómetro final no mayor al inicial, o recorrido superior a 3 veces el
+        plan con más de 100 km adicionales. Es un criterio de revisión operativa; no corrige ni
+        borra las lecturas.
+      </p>
+      <div class="tabla-consumo">
+        <table>
+          <thead>
+            <tr>
+              <th>Servicio / unidad</th>
+              <th>Odómetro inicial / final</th>
+              <th>Distancia utilizada</th>
+              <th>Fuente</th>
+              <th>Diésel estimado</th>
+              <th>CO₂ estimado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of datos().filas; track d.s.id) {
+              <tr>
+                <td>
+                  {{ d.s.codigo }}<small>{{ d.s.vehiculo.placa }}</small>
+                </td>
+                <td>{{ numero(d.inicial) }} / {{ numero(d.final) }} km</td>
+                <td>{{ numero(d.km) }} km</td>
+                <td>
+                  {{
+                    d.fuente === 'ODOMETRO'
+                      ? 'Odómetro'
+                      : d.fuente === 'RUTA'
+                        ? 'Ruta estimada'
+                        : d.fuente === 'REVISION'
+                          ? 'Por revisar'
+                          : d.fuente === 'SIN_REFERENCIA'
+                            ? 'Sin referencia'
+                            : 'Sin datos'
+                  }}<small>{{ d.motivo }}</small>
+                </td>
+                <td>{{ numero(d.galones, 2) }} gal</td>
+                <td>{{ numero(d.co2, 2) }} kg</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+}

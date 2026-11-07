@@ -1,0 +1,856 @@
+<section class="indicadores" aria-label="Indicadores operativos">
+  <p class="nota">
+    Tiempos redondeados al minuto más cercano; a partir de una hora se muestran horas y minutos. Los
+    cálculos conservan la precisión original.
+  </p>
+  @if (vista() === 'general') {
+    <header>
+      <div>
+        <p>Productividad y trazabilidad</p>
+        <h2>Reporte general de la operación</h2>
+        <span
+          >Viajes agrupados por su salida programada. Actualiza la página para consultar nuevas
+          marcaciones.</span
+        >
+      </div>
+    </header>
+    <p class="nota">
+      Estado, fechas y ruta filtran las tarjetas, gráficos y detalle de viajes. Mantenimiento
+      utiliza la fecha de reporte y no el estado de los viajes.
+    </p>
+    @if (desde() && hasta() && desde() > hasta()) {
+      <p class="aviso">
+        El rango de fechas está invertido. Corrige Desde y Hasta para analizar el período.
+      </p>
+    }
+    @if (pendientes()) {
+      <p role="status">Consultando mantenimiento, evaluación y validación…</p>
+    }
+    @if (errores().length) {
+      <p class="aviso" role="status">
+        No fue posible consultar: {{ errores().join(', ') }}. Sus resultados se muestran sin datos;
+        no se consideran cero.
+      </p>
+    }
+    @if (estado() !== 'TODOS') {
+      <p class="aviso">
+        Hay un filtro de estado activo. Los tiempos y kilómetros solo se calculan con viajes
+        completados; si seleccionas cancelados o programados, esos indicadores no tienen datos
+        aplicables.
+      </p>
+    }
+    <div class="kpis">
+      <article>
+        <small>Viajes del período</small><strong>{{ datos().servicios.length }}</strong
+        ><span
+          >{{ datos().completados.length }} completados · {{ datos().cancelados }} cancelados ·
+          {{ datos().interrumpidos.length }} interrumpidos</span
+        >
+      </article>
+      <article>
+        <small>Salidas sin atraso</small
+        ><strong>{{ porcentaje(datos().puntuales.length, datos().iniciados.length) }}</strong
+        ><span
+          >{{ datos().puntuales.length }} de {{ datos().iniciados.length }} salidas reales con
+          programación válida</span
+        >
+      </article>
+      <article>
+        <small>Salidas pendientes atrasadas</small><strong>{{ datos().pendientes.length }}</strong
+        ><span>Programados cuya hora prevista ya pasó</span>
+      </article>
+      <article>
+        <small>{{
+          estado() === 'TODOS' ? 'Cancelación de viajes' : 'Cancelados en la selección'
+        }}</small
+        ><strong>{{
+          estado() === 'TODOS'
+            ? porcentaje(datos().cancelados, datos().servicios.length)
+            : datos().cancelados
+        }}</strong
+        ><span
+          >{{ datos().cancelados }} de {{ datos().servicios.length }} servicios seleccionados.
+          {{
+            estado() === 'TODOS' ? '' : 'Selecciona todos los estados para calcular la tasa global.'
+          }}</span
+        >
+      </article>
+    </div>
+
+    <div class="graficos">
+      <article class="grafico">
+        <div class="titulo-grafico">
+          <div>
+            <small>Distribución del período</small>
+            <h3>Estado de los viajes</h3>
+          </div>
+          <span class="etiqueta">{{ datos().servicios.length }} servicios</span>
+        </div>
+        <div class="columnas" role="img" aria-label="Cantidad de viajes por estado">
+          @for (b of estadosGrafico(); track b.nombre) {
+            <div class="columna">
+              <strong>{{ b.valor }}</strong>
+              <div class="espacio-columna">
+                <div
+                  class="barra-vertical"
+                  [style.height.%]="anchoBarra(b.valor, estadosGrafico())"
+                  [style.background]="b.color"
+                  [attr.title]="b.nombre + ': ' + b.valor"
+                ></div>
+              </div>
+              <span>{{ b.nombre }}</span>
+            </div>
+          }
+        </div>
+        <p class="nota">
+          Compara el volumen de trabajo y los servicios que no llegaron a ejecutarse.
+        </p>
+      </article>
+      <article class="grafico">
+        <div class="titulo-grafico">
+          <div>
+            <small>Hora real frente a la programada</small>
+            <h3>Salida frente al horario previsto</h3>
+          </div>
+          <span class="etiqueta">Sin margen adicional</span>
+        </div>
+        @if (datos().iniciados.length) {
+          <div class="puntualidad">
+            <div
+              class="anillo"
+              role="img"
+              [attr.aria-label]="
+                'Salida frente al horario previsto: ' + numero(puntualidadGrafico()) + ' por ciento'
+              "
+              [style.background]="
+                'conic-gradient(#007aff 0% ' +
+                puntualidadGrafico() +
+                '%, #e99a24 ' +
+                puntualidadGrafico() +
+                '% 100%)'
+              "
+            >
+              <div>
+                <strong>{{ numero(puntualidadGrafico()) }}<em>%</em></strong
+                ><span>Sin atraso</span>
+              </div>
+            </div>
+            <div class="leyenda">
+              <p>
+                <i style="background: #007aff"></i>Sin atraso <b>{{ datos().puntuales.length }}</b>
+              </p>
+              <p>
+                <i style="background: #e99a24"></i>Con atraso
+                <b>{{ datos().iniciados.length - datos().puntuales.length }}</b>
+              </p>
+            </div>
+          </div>
+        } @else {
+          <div class="sin-grafico">Aún no hay salidas reales con programación válida.</div>
+        }
+        <p class="nota">
+          Base: {{ datos().iniciados.length }} salidas registradas. Se compara directamente con la
+          hora programada; no atribuye la causa del atraso al chofer.
+        </p>
+      </article>
+      <article class="grafico">
+        <div class="titulo-grafico">
+          <div>
+            <small>Promedio por viaje</small>
+            <h3>¿Dónde se concentra el tiempo?</h3>
+          </div>
+        </div>
+        @if (tiemposGrafico().muestra) {
+          <div class="barras-horizontales">
+            @for (b of tiemposGrafico().barras; track b.nombre) {
+              <div class="fila-barra">
+                <div>
+                  <span>{{ b.nombre }}</span
+                  ><strong>{{ tiempo(b.valor) }}</strong>
+                </div>
+                <div class="pista">
+                  <div
+                    [style.width.%]="anchoBarra(b.valor, tiemposGrafico().barras)"
+                    [style.background]="b.color"
+                    [attr.title]="b.nombre + ': ' + tiempo(b.valor)"
+                  ></div>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="sin-grafico">
+            Se necesitan viajes con todos sus tramos y paradas registrados.
+          </div>
+        }
+        <p class="nota">
+          {{ tiemposGrafico().muestra }} viajes con ambas mediciones completas. Esta comparación
+          utiliza los mismos viajes; trabajo y espera incluye carga y descarga.
+        </p>
+      </article>
+      <article class="grafico">
+        <div class="titulo-grafico">
+          <div>
+            <small>Hasta 8 unidades con mayor actividad</small>
+            <h3>Actividad por vehículo</h3>
+          </div>
+          <div class="selector-medida" aria-label="Medida del gráfico">
+            <button
+              type="button"
+              [class.seleccionado]="medidaUnidad() === 'viajes'"
+              [attr.aria-pressed]="medidaUnidad() === 'viajes'"
+              (click)="medidaUnidad.set('viajes')"
+            >
+              Viajes</button
+            ><button
+              type="button"
+              [class.seleccionado]="medidaUnidad() === 'km'"
+              [attr.aria-pressed]="medidaUnidad() === 'km'"
+              (click)="medidaUnidad.set('km')"
+            >
+              Km reales
+            </button>
+          </div>
+        </div>
+        <div class="barras-horizontales">
+          @for (b of unidadesGrafico(); track b.nombre) {
+            <div class="fila-barra">
+              <div>
+                <span>{{ b.nombre }}</span
+                ><strong
+                  >{{ numero(b.valor, medidaUnidad() === 'viajes' ? 0 : 1) }}
+                  {{ medidaUnidad() === 'viajes' ? 'viajes' : 'km' }}</strong
+                >
+              </div>
+              <div class="pista">
+                <div
+                  [style.width.%]="anchoBarra(b.valor, unidadesGrafico())"
+                  [style.background]="b.color"
+                  [attr.title]="b.nombre + ': ' + numero(b.valor)"
+                ></div>
+              </div>
+            </div>
+          } @empty {
+            <div class="sin-grafico">No hay viajes completados con datos para esta medida.</div>
+          }
+        </div>
+        <p class="nota">
+          Los kilómetros excluyen odómetros incompletos. El volumen de viajes no determina por sí
+          solo la eficiencia de la unidad.
+        </p>
+      </article>
+      <article class="grafico grafico-ancho">
+        <div class="titulo-grafico">
+          <div>
+            <small>Ingresos reportados en el período</small>
+            <h3>Avance de mantenimiento</h3>
+          </div>
+          <span class="etiqueta">{{
+            mantenimiento() === null ? 'Sin datos' : mantenimiento()!.periodo.length + ' reportes'
+          }}</span>
+        </div>
+        @if (mantenimiento()) {
+          <div
+            class="columnas mantenimiento-columnas"
+            role="img"
+            aria-label="Cantidad de mantenimientos por estado"
+          >
+            @for (b of mantenimientoGrafico(); track b.estado) {
+              <div class="columna">
+                <strong>{{ b.valor }}</strong>
+                <div class="espacio-columna">
+                  <div
+                    class="barra-vertical"
+                    [style.height.%]="anchoBarra(b.valor, mantenimientoGrafico())"
+                    [style.background]="b.color"
+                    [attr.title]="b.nombre + ': ' + b.valor"
+                  ></div>
+                </div>
+                <span>{{ b.nombre }}</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="sin-grafico">
+            {{
+              pendientes()
+                ? 'Consultando mantenimiento…'
+                : 'No hay información disponible de mantenimiento.'
+            }}
+          </div>
+        }
+        <p class="nota">
+          Estado actual de los ingresos del período. Los pendientes anteriores a ese período se
+          muestran en el indicador de atenciones abiertas.
+        </p>
+      </article>
+    </div>
+    <p class="nota">
+      Los auxilios se identifican como servicios de apoyo y se excluyen de la productividad de
+      transporte. Los viajes interrumpidos por avería se muestran separados de los cancelados.
+    </p>
+    <h3>Tiempos reales de viajes completados</h3>
+    <div class="kpis tres">
+      <article>
+        <small>Duración total promedio</small><strong>{{ tiempo(datos().totalPromedio) }}</strong
+        ><span>{{ datos().muestras.total }} viajes con salida y llegada final válidas</span>
+      </article>
+      <article>
+        <small>Conducción promedio</small><strong>{{ tiempo(datos().conduccionPromedio) }}</strong
+        ><span>{{ datos().muestras.conduccion }} viajes con todos sus tramos registrados</span>
+      </article>
+      <article>
+        <small>Trabajo y espera promedio</small
+        ><strong>{{ tiempo(datos().permanenciaPromedio) }}</strong
+        ><span
+          >{{ datos().muestras.permanencia }} viajes con llegada y nueva salida en todas las
+          paradas</span
+        >
+      </article>
+    </div>
+    <p class="nota">
+      Trabajo y espera incluye carga, descarga y permanencia. Las marcaciones actuales no permiten
+      separar esas actividades. La detención por avería se descuenta de conducción y trabajo/espera.
+      Cada promedio puede tener una muestra distinta; no deben sumarse si no corresponden a los
+      mismos viajes.
+    </p>
+    <div class="bloques">
+      <article class="panel">
+        <h3>Kilometraje real frente al plan</h3>
+        <dl>
+          <div>
+            <dt>Recorrido del odómetro</dt>
+            <dd>{{ datos().pares ? numero(datos().kmReal) : 'Sin datos' }} km</dd>
+          </div>
+          <div>
+            <dt>Plan de esos mismos viajes</dt>
+            <dd>{{ datos().pares ? numero(datos().kmPlan) : 'Sin datos' }} km</dd>
+          </div>
+          <div>
+            <dt>Diferencia sobre el plan</dt>
+            <dd>{{ numero(datos().desviacion) }} {{ datos().desviacion === null ? '' : '%' }}</dd>
+          </div>
+        </dl>
+        <p class="nota">
+          {{ datos().pares }} viajes comparables. Solo se usan lecturas coherentes y un plan de
+          distancia válido. Los odómetros sospechosos quedan por revisar. Una diferencia requiere
+          revisión del recorrido; por sí sola no demuestra un uso indebido.
+        </p>
+      </article>
+      <article class="panel">
+        <h3>Validación y nivel de servicio</h3>
+        <dl>
+          <div>
+            <dt>Pendientes de validación</dt>
+            <dd>
+              {{ calidad().pendientes === null ? 'Sin datos' : calidad().pendientes!.length }}
+            </dd>
+          </div>
+          <div>
+            <dt>Con observaciones</dt>
+            <dd>
+              {{ calidad().observados === null ? 'Sin datos' : calidad().observados!.length }}
+            </dd>
+          </div>
+          <div>
+            <dt>Satisfacción promedio</dt>
+            <dd>{{ numero(calidad().nota) }} / 5</dd>
+          </div>
+          <div>
+            <dt>Viajes evaluados</dt>
+            <dd>
+              {{ calidad().evaluados === null ? 'Sin datos' : calidad().evaluados }} de
+              {{ datos().completados.length }}
+            </dd>
+          </div>
+        </dl>
+        <p class="nota">
+          Se considera la última validación de cada viaje. La satisfacción se calcula con encuestas
+          válidas de viajes completados.
+        </p>
+      </article>
+    </div>
+    <article class="panel mantenimiento">
+      <h3>Mantenimiento y disponibilidad</h3>
+      <p class="nota">
+        Los ingresos, costos y tiempos se filtran por fecha de reporte. Los pendientes corresponden
+        a todos los mantenimientos abiertos actualmente. Ruta y chofer no filtran mantenimiento.
+      </p>
+      @if (estado() !== 'TODOS') {
+        <p class="aviso">
+          Hay un filtro de estado activo. Los tiempos y kilómetros solo se calculan con viajes
+          completados; si seleccionas cancelados o programados, esos indicadores no tienen datos
+          aplicables.
+        </p>
+      }
+      <div class="kpis">
+        <article>
+          <small>Atenciones abiertas actuales</small
+          ><strong>{{
+            mantenimiento() === null ? 'Sin datos' : mantenimiento()!.abiertos.length
+          }}</strong
+          ><span>{{
+            mantenimiento() === null
+              ? ''
+              : mantenimiento()!.criticos.length + ' de prioridad crítica'
+          }}</span>
+        </article>
+        <article>
+          <small>Tiempo promedio hasta el cierre</small
+          ><strong>{{
+            tiempo(
+              mantenimiento() === null || mantenimiento()!.horas === null
+                ? null
+                : mantenimiento()!.horas! * 60
+            )
+          }}</strong
+          ><span>{{ mantenimiento()?.muestra ?? 0 }} cierres con fechas válidas</span>
+        </article>
+        <article>
+          <small>Costo registrado del período</small
+          ><strong>{{
+            mantenimiento()?.costo === null || !mantenimiento()
+              ? 'Sin datos'
+              : 'S/ ' + numero(mantenimiento()!.costo, 2)
+          }}</strong
+          ><span
+            >Reparados y cerrados · {{ mantenimiento()?.sinCosto ?? 0 }} sin costo informado</span
+          >
+        </article>
+        <article>
+          <small>Ingresos a mantenimiento</small
+          ><strong>{{
+            mantenimiento() === null ? 'Sin datos' : mantenimiento()!.periodo.length
+          }}</strong
+          ><span>Reportados en el período seleccionado</span>
+        </article>
+      </div>
+    </article>
+    <article class="panel">
+      <h3>Qué conviene revisar</h3>
+      <p class="nota">
+        Abre cada grupo para identificar los registros. Estas señales orientan la revisión
+        operativa; no reemplazan la validación del coordinador.
+      </p>
+      <details>
+        <summary>Salidas pendientes atrasadas · {{ datos().pendientes.length }}</summary>
+        @for (s of datos().pendientes; track s.id) {
+          <p>
+            <b>{{ s.codigo }}</b> · {{ s.vehiculo.placa }} · salida programada
+            {{ s.fechaHoraSalida?.replace('T', ' ') }}
+          </p>
+        } @empty {
+          <p>No hay salidas pendientes fuera de horario.</p>
+        }
+      </details>
+      <details>
+        <summary>
+          Completados con odómetro faltante o inconsistente · {{ datos().sinOdometro.length }}
+        </summary>
+        @for (d of datos().sinOdometro; track d.s.id) {
+          <p>
+            <b>{{ d.s.codigo }}</b> · {{ d.s.vehiculo.placa }} · revisar lectura inicial y final.
+          </p>
+        } @empty {
+          <p>No se detectaron inconsistencias de odómetro.</p>
+        }
+      </details>
+      <details>
+        <summary>Completados sin duración total válida · {{ datos().sinTiempos.length }}</summary>
+        @for (d of datos().sinTiempos; track d.s.id) {
+          <p>
+            <b>{{ d.s.codigo }}</b> · revisar las fechas de salida y llegada final.
+          </p>
+        } @empty {
+          <p>Todos los completados tienen fechas utilizables.</p>
+        }
+      </details>
+      <details>
+        <summary>
+          Viajes pendientes de validación ·
+          {{ calidad().pendientes === null ? 'Sin datos' : calidad().pendientes!.length }}
+        </summary>
+        @for (s of calidad().pendientes || []; track s.id) {
+          <p>
+            <b>{{ s.codigo }}</b> · {{ s.vehiculo.placa }}
+          </p>
+        }
+      </details>
+      @if (mantenimiento(); as m) {
+        <details>
+          <summary>Mantenimientos críticos abiertos · {{ m.criticos.length }}</summary>
+          @for (r of m.criticos; track r.id) {
+            <p>
+              <b>{{ r.codigo }}</b> · {{ r.vehiculoPlaca }} · {{ r.titulo }}
+            </p>
+          } @empty {
+            <p>No hay mantenimientos críticos abiertos.</p>
+          }
+        </details>
+      }
+    </article>
+    <article class="panel">
+      <h3>Actividad por unidad</h3>
+      <p class="nota">
+        Viajes completados y kilometraje válido del período. Compara unidades con rutas, carga y
+        días disponibles similares; la cantidad de viajes por sí sola no mide eficiencia.
+      </p>
+      <div class="tabla">
+        <table>
+          <thead>
+            <tr>
+              <th>Unidad</th>
+              <th>Viajes completados</th>
+              <th>Km reales</th>
+              <th>Viajes con odómetro válido</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (u of unidades(); track u.placa) {
+              <tr>
+                <td>{{ u.placa }}</td>
+                <td>{{ u.completados }}</td>
+                <td>{{ u.muestra ? numero(u.km) : 'Sin datos' }}</td>
+                <td>{{ u.muestra }} de {{ u.completados }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4">Sin viajes completados.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </article>
+    @if (mantenimiento()) {
+      <article class="panel">
+        <h3>Categorías de mantenimiento repetidas</h3>
+        <p class="nota">
+          Dos o más reportes de la misma categoría en una unidad durante el período. Revisa el
+          diagnóstico para confirmar si se trata de la misma falla. Se excluyen cancelados,
+          preventivos, documentación y «Otro».
+        </p>
+        @for (r of repetidos(); track r.placa + r.tipo) {
+          <p>{{ r.placa }} · {{ r.tipo }} · {{ r.codigos.length }} reportes</p>
+          <p class="nota">{{ r.codigos.join(' · ') }}</p>
+        } @empty {
+          <p>No se detectaron categorías repetidas en esta selección.</p>
+        }
+      </article>
+    }
+    <article class="panel">
+      <h3>Base de cálculo por viaje completado</h3>
+      <p class="nota">
+        La secuencia completa permite diferenciar viajes con paradas adicionales. Compara recorridos
+        similares antes de valorar su rendimiento.
+      </p>
+      <div class="tabla">
+        <table>
+          <thead>
+            <tr>
+              <th>Servicio / unidad</th>
+              <th>Recorrido</th>
+              <th>Total real</th>
+              <th>Conducción</th>
+              <th>Trabajo y espera</th>
+              <th>Detención por avería</th>
+              <th>Km reales</th>
+              <th>Km plan</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of datos().detalles; track d.s.id) {
+              <tr>
+                <td>
+                  <b>{{ d.s.codigo }}</b
+                  ><small>{{ d.s.vehiculo.placa }}</small>
+                </td>
+                <td>{{ d.recorrido }}</td>
+                <td>{{ tiempo(d.total) }}</td>
+                <td>{{ tiempo(d.conduccion) }}</td>
+                <td>{{ tiempo(d.permanencia) }}</td>
+                <td>{{ tiempo(d.averia) }}</td>
+                <td>
+                  {{ numero(d.km)
+                  }}<small>{{
+                    d.distancia.fuente === 'REVISION' ? 'Por revisar: ' + d.distancia.motivo : ''
+                  }}</small>
+                </td>
+                <td>{{ numero(d.plan) }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7">No hay viajes completados en esta selección.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </article>
+    <p class="nota">
+      {{ datos().omitidos }} servicios de la selección de ruta y chofer no tienen salida programada;
+      se excluyen al filtrar fechas. No se calcula productividad por toneladas ni utilización
+      histórica de flota: faltan peso real transportado y calendario de disponibilidad. La cantidad
+      solicitada es una estimación.
+    </p>
+  } @else {
+    <header>
+      <div>
+        <p>Seguimiento individual</p>
+        <h2>Reporte de {{ nombreChofer() }}</h2>
+        <span>Viajes del conductor seleccionado. Fechas según salida programada.</span>
+      </div>
+    </header>
+    <p class="nota">
+      Las cancelaciones, esperas y atrasos describen el servicio; no se atribuyen automáticamente al
+      conductor. No se mezclan aquí costos ni mantenimiento de la flota.
+    </p>
+    @if (errores().length) {
+      <p class="aviso">
+        No fue posible consultar {{ errores().join(', ') }}. Esos datos no se consideran cero.
+      </p>
+    }
+    @if (estado() !== 'TODOS') {
+      <p class="aviso">
+        Hay un filtro de estado activo. Los tiempos y kilómetros solo se calculan con viajes
+        completados; si seleccionas cancelados o programados, esos indicadores no tienen datos
+        aplicables.
+      </p>
+    }
+    <div class="kpis">
+      <article>
+        <small>Viajes asignados en el período</small><strong>{{ datos().servicios.length }}</strong
+        ><span
+          >{{ datos().completados.length }} completados · {{ datos().cancelados }} cancelados ·
+          {{ datos().interrumpidos.length }} interrumpidos</span
+        >
+      </article>
+      <article>
+        <small>Salidas con atraso registrado</small><strong>{{ datos().atrasos.length }}</strong
+        ><span>De {{ datos().iniciados.length }} salidas con horario y marcación válidos</span>
+      </article>
+      <article>
+        <small>Atraso promedio entre salidas tardías</small
+        ><strong>{{ tiempo(datos().atrasoPromedio) }}</strong
+        ><span
+          >Solo {{ datos().atrasos.length }} salidas tardías · diferencia entre fecha y hora
+          programadas y registradas</span
+        >
+      </article>
+      <article>
+        <small>Viajes pendientes de validación</small
+        ><strong>{{
+          calidad().pendientes === null ? 'Sin datos' : calidad().pendientes!.length
+        }}</strong
+        ><span>{{
+          calidad().observados === null ? '' : calidad().observados!.length + ' con observaciones'
+        }}</span>
+      </article>
+    </div>
+    <div class="graficos">
+      <article class="grafico">
+        <div class="titulo-grafico">
+          <div>
+            <small>Servicios del conductor</small>
+            <h3>Viajes por estado</h3>
+          </div>
+        </div>
+        <div class="columnas" role="img" aria-label="Viajes del chofer por estado">
+          @for (b of estadosGrafico(); track b.nombre) {
+            <div class="columna">
+              <strong>{{ b.valor }}</strong>
+              <div class="espacio-columna">
+                <div
+                  class="barra-vertical"
+                  [style.height.%]="anchoBarra(b.valor, estadosGrafico())"
+                  [style.background]="b.color"
+                ></div>
+              </div>
+              <span>{{ b.nombre }}</span>
+            </div>
+          }
+        </div>
+      </article>
+      <article class="grafico">
+        <div class="titulo-grafico">
+          <div>
+            <small>Los mismos viajes con registro completo</small>
+            <h3>Conducción y permanencia</h3>
+          </div>
+          <span class="etiqueta">{{ tiemposGrafico().muestra }} viajes</span>
+        </div>
+        <div class="barras-horizontales">
+          @if (tiemposGrafico().muestra) {
+            @for (b of tiemposGrafico().barras; track b.nombre) {
+              <div class="fila-barra">
+                <div>
+                  <span>{{ b.nombre }}</span
+                  ><strong>{{ tiempo(b.valor) }}</strong>
+                </div>
+                <div class="pista">
+                  <div
+                    [style.width.%]="anchoBarra(b.valor, tiemposGrafico().barras)"
+                    [style.background]="b.color"
+                  ></div>
+                </div>
+              </div>
+            }
+          } @else {
+            <p class="sin-grafico">Sin viajes con todos los intervalos registrados.</p>
+          }
+        </div>
+        <p class="nota">Promedio por viaje. La permanencia incluye carga, descarga y espera.</p>
+      </article>
+      <article class="grafico grafico-ancho">
+        <div class="titulo-grafico">
+          <div>
+            <small>Últimas 10 salidas registradas, ordenadas por programación</small>
+            <h3>Tiempo de atraso por viaje</h3>
+          </div>
+        </div>
+        <div class="barras-horizontales">
+          @for (b of salidasGrafico(); track b.nombre) {
+            <div class="fila-barra">
+              <div>
+                <span>{{ b.nombre }}</span
+                ><strong>{{ tiempo(b.valor) }}</strong>
+              </div>
+              <div class="pista">
+                <div
+                  [style.width.%]="anchoBarra(b.valor, salidasGrafico())"
+                  [style.background]="b.color"
+                ></div>
+              </div>
+            </div>
+          } @empty {
+            <p class="sin-grafico">Sin salidas con fecha programada y marcación válidas.</p>
+          }
+        </div>
+        <p class="nota">
+          Cero significa salida a la hora prevista o antes. Se comparan fecha y hora completas; un
+          atraso puede abarcar días. No se aplica tolerancia adicional.
+        </p>
+      </article>
+    </div>
+    <div class="bloques">
+      <article class="panel">
+        <h3>Distancia y control de registros</h3>
+        <dl>
+          <div>
+            <dt>Kilómetros reales comparables</dt>
+            <dd>{{ datos().pares ? numero(datos().kmReal) + ' km' : 'Sin datos' }}</dd>
+          </div>
+          <div>
+            <dt>Kilómetros planificados de esos viajes</dt>
+            <dd>{{ datos().pares ? numero(datos().kmPlan) + ' km' : 'Sin datos' }}</dd>
+          </div>
+          <div>
+            <dt>Odómetro faltante o inconsistente</dt>
+            <dd>{{ datos().sinOdometro.length }} viajes</dd>
+          </div>
+        </dl>
+        <p class="nota">
+          {{ datos().pares }} viajes con ambos datos válidos. No mide combustible ni productividad
+          por carga.
+        </p>
+      </article>
+      <article class="panel">
+        <h3>Evaluación del servicio</h3>
+        <dl>
+          <div>
+            <dt>Satisfacción promedio</dt>
+            <dd>{{ numero(calidad().nota) }} / 5</dd>
+          </div>
+          <div>
+            <dt>Viajes evaluados</dt>
+            <dd>
+              {{ calidad().evaluados === null ? 'Sin datos' : calidad().evaluados }} de
+              {{ datos().completados.length }}
+            </dd>
+          </div>
+        </dl>
+        <p class="nota">
+          Evalúa el servicio completo. La calificación no se interpreta como una evaluación
+          exclusiva del conductor.
+        </p>
+      </article>
+    </div>
+    <article class="panel">
+      <h3>Detalle de tiempos por viaje completado</h3>
+      <div class="tabla">
+        <table>
+          <thead>
+            <tr>
+              <th>Servicio</th>
+              <th>Recorrido</th>
+              <th>Salida real</th>
+              <th>Llegada final</th>
+              <th>Total</th>
+              <th>Conducción</th>
+              <th>Trabajo y espera</th>
+              <th>Detención por avería</th>
+              <th>Km reales</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of datos().detalles; track d.s.id) {
+              <tr>
+                <td>{{ d.s.codigo }}</td>
+                <td>{{ d.recorrido }}</td>
+                <td>{{ fecha(d.s.fechaHoraSalidaReal) }}</td>
+                <td>{{ fecha(d.s.fechaHoraLlegadaReal) }}</td>
+                <td>{{ tiempo(d.total) }}</td>
+                <td>{{ tiempo(d.conduccion) }}</td>
+                <td>{{ tiempo(d.permanencia) }}</td>
+                <td>{{ tiempo(d.averia) }}</td>
+                <td>
+                  {{ numero(d.km)
+                  }}<small>{{
+                    d.distancia.fuente === 'REVISION' ? 'Por revisar: ' + d.distancia.motivo : ''
+                  }}</small>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="8">Sin viajes completados en esta selección.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </article>
+    <article class="panel">
+      <h3>Horario programado y salida registrada</h3>
+      <div class="tabla">
+        <table>
+          <thead>
+            <tr>
+              <th>Servicio</th>
+              <th>Unidad</th>
+              <th>Programado</th>
+              <th>Salida real</th>
+              <th>Atraso</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of datos().servicios; track s.id) {
+              <tr>
+                <td>{{ s.codigo }}</td>
+                <td>{{ s.vehiculo.placa }}</td>
+                <td>{{ fecha(s.fechaHoraSalida) }}</td>
+                <td>{{ fecha(s.fechaHoraSalidaReal) }}</td>
+                <td>{{ atrasoServicio(s.id) }}</td>
+                <td>{{ s.estado }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6">Sin servicios asignados en esta selección.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </article>
+  }
+</section>

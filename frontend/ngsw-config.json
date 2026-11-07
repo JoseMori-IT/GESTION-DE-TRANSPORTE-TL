@@ -1,0 +1,21 @@
+{
+  "$schema": "./node_modules/@angular/service-worker/config/schema.json",
+  "index": "/index.html",
+  "assetGroups": [
+    {
+      "name": "aplicacion",
+      "installMode": "prefetch",
+      "resources": {
+        "files": ["/index.html", "/*.css", "/*.js", "/media/**", "/manifest.webmanifest", "/favicon.ico", "/icons/**"]
+      }
+    },
+    {
+      "name": "recursos-locales",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "resources": {"files": ["/assets/**"]}
+    }
+  ],
+  "dataGroups": [],
+  "navigationUrls": ["/**", "!/**/*.*", "!/api/**", "!/transporte/api/**"]
+}

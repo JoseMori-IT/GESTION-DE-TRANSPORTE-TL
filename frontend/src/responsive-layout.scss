@@ -1,0 +1,86 @@
+/* Adaptación por espacio disponible. No modifica impresión ni oculta contenido. */
+@media screen {
+  body.apple-theme .app-shell {
+    grid-template-columns: clamp(200px, 17vw, 244px) minmax(0, 1fr);
+  }
+  body.apple-theme .route-area,
+  body.apple-theme .route-area > router-outlet + *,
+  body.apple-theme .route-area :is(main.content, main.fleet-content, main.maintenance-content) {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+  }
+  body.apple-theme .route-area :is(.content, .fleet-content, .maintenance-content) {
+    padding-inline: clamp(16px, 2.2vw, 32px);
+  }
+  body.apple-theme :is(.table-container, .table-wrapper) {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+  }
+  body.apple-theme .route-area :is(.table-panel, .panel, .section-panel) {
+    min-width: 0;
+    max-width: 100%;
+  }
+  body.apple-theme .route-area :is(.summary, .summary-grid, .stats-grid) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)) !important;
+    max-width: 100%;
+    gap: clamp(12px, 1.2vw, 20px);
+  }
+  body.apple-theme .route-area :is(.summary, .summary-grid, .stats-grid) > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  body.apple-theme
+    .route-area
+    :is(.topbar, .page-heading, .page-header, .section-heading, .filters-heading) {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+  body.apple-theme :is(.modal-backdrop, .evidence-overlay, .service-detail-overlay) {
+    padding: clamp(12px, 2vw, 24px);
+  }
+  body.apple-theme
+    :is(.modal, .detail-modal, .evidence-modal, .service-detail-modal, .fleet-confirm-modal) {
+    min-width: 0;
+    max-width: calc(100vw - 32px) !important;
+    max-height: calc(100dvh - 32px) !important;
+    overflow-y: auto;
+    overscroll-behavior-block: contain;
+  }
+  body.apple-theme :is(.form-grid, .evidence-content, .detail-facts, .analysis-grid) > * {
+    min-width: 0;
+  }
+  body.apple-theme :is(.modal-actions, .service-detail-actions, .evidence-form-actions) {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  body.apple-theme
+    :is(.modal, .evidence-modal, .service-detail-modal)
+    :is(input, select, textarea) {
+    min-width: 0;
+    max-width: 100%;
+  }
+  @media (max-width: 1100px) {
+    body.apple-theme .route-area :is(.filters-grid, .fleet-grid) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    body.apple-theme :is(.evidence-content, .analysis-grid) {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+  }
+  @media (max-width: 900px) {
+    body.apple-theme .app-shell {
+      display: block;
+    }
+  }
+  @media (max-width: 600px) {
+    body.apple-theme .route-area :is(.filters-grid, .fleet-grid),
+    body.apple-theme .form-grid {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+  }
+}

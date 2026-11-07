@@ -1,0 +1,1091 @@
+<div class="page">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo-container">
+        <img src="assets/branding/logopalmas.webp" alt="Grupo Palmas" />
+      </div>
+
+      <small>Gestión de Transporte</small>
+    </div>
+
+    <nav>
+      <button type="button" class="nav-item" (click)="volverDashboard()">Resumen</button>
+
+      <button type="button" class="nav-item" (click)="irSolicitudes()">Solicitudes</button>
+
+      <span class="nav-item active"> Servicios </span>
+    </nav>
+
+    <button type="button" class="logout" (click)="cerrarSesion()">Cerrar sesión</button>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div>
+        <p>Operaciones de transporte</p>
+        <h1>Servicios</h1>
+        <span> Traslados programados desde solicitudes aprobadas. </span>
+      </div>
+
+      <button type="button" class="primary-button" (click)="irSolicitudes()">
+        + Nueva solicitud
+      </button>
+    </header>
+
+    @if (avisoActualizacion()) {
+      <p role="status" style="color: #63705c; font-size: 12px; line-height: 1.6">
+        {{ avisoActualizacion() }}
+      </p>
+    }
+    <p role="note">
+      El avance corresponde a las últimas marcaciones recibidas. Fuera de la red corporativa, el
+      chofer guarda los eventos en su dispositivo y se actualizan al sincronizar; no representa GPS
+      en vivo.
+    </p>
+
+    <div class="process-notice">
+      <strong>Flujo de programación</strong>
+
+      <span> Los servicios se generan al aprobar y programar una solicitud de transporte. </span>
+
+      <button type="button" (click)="irSolicitudes()">Ver solicitudes</button>
+    </div>
+
+    @if (mensajeExito()) {
+      <div class="notification success">
+        {{ mensajeExito() }}
+      </div>
+    }
+
+    @if (mensajeAccion()) {
+      <div class="notification success">
+        {{ mensajeAccion() }}
+      </div>
+    }
+
+    <section class="service-list-tools" aria-label="Filtros de servicios">
+      <div class="service-state-tabs">
+        @for (e of estadosListado; track e.id) {
+          <button
+            type="button"
+            [class.selected]="filtroEstado() === e.id"
+            [attr.aria-pressed]="filtroEstado() === e.id"
+            (click)="filtroEstado.set(e.id)"
+          >
+            {{ e.nombre }}<span>{{ conteoEstado(e.id) }}</span>
+          </button>
+        }
+      </div>
+      <div class="service-search-row">
+        <label for="buscar-servicio"
+          >Buscar servicio<input
+            id="buscar-servicio"
+            type="search"
+            [value]="busqueda()"
+            (input)="busqueda.set($any($event.target).value)"
+            placeholder="Código, placa, chofer, ruta o producto" /></label
+        ><span role="status"
+          >{{ serviciosFiltrados().length }} de {{ servicios().length }} servicios</span
+        ><button
+          type="button"
+          class="service-refresh"
+          [disabled]="cargando()"
+          (click)="cargarServicios()"
+        >
+          Actualizar
+        </button>
+      </div>
+    </section>
+    <section class="table-panel">
+      @if (cargando()) {
+        <p class="state-message">Cargando servicios...</p>
+      } @else if (mensajeError()) {
+        <div class="state-message">
+          <p>{{ mensajeError() }}</p>
+
+          <button type="button" (click)="cargarServicios()">Volver a intentar</button>
+        </div>
+      } @else if (servicios().length === 0) {
+        <div class="state-message">
+          <p>Aún no hay servicios registrados.</p>
+
+          <button type="button" (click)="irSolicitudes()">Registrar una solicitud</button>
+        </div>
+      } @else {
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Servicio y programación</th>
+                <th>Unidad y tripulación</th>
+                <th>Recorrido y carga</th>
+                <th>Ejecución real</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (servicio of serviciosFiltrados(); track servicio.id) {
+                <tr>
+                  <td class="service-identity">
+                    <strong>
+                      {{ servicio.codigo }}
+                    </strong>
+                    <small class="list-caption">Salida prevista</small
+                    ><span class="list-value">
+                      @if (servicio.fechaHoraSalida; as prevista) {
+                        {{ prevista.slice(0, 16).replace('T', ' ') }}
+                      } @else {
+                        Sin hora prevista
+                      }
+                    </span>
+                  </td>
+                  <td>
+                    <strong class="list-plate">
+                      {{ servicio.vehiculo.placa }} </strong
+                    ><span class="list-person">
+                      {{ servicio.conductor.nombres }}
+                      {{ servicio.conductor.apellidos }}
+                    </span>
+                  </td>
+                  <td>
+                    <strong class="list-route">
+                      {{
+                        servicio.ruta?.nombre ||
+                          servicio.origenDescripcion + ' → ' + servicio.destinoDescripcion
+                      }} </strong
+                    ><small class="list-product">
+                      @switch (servicio.productoTransportado) {
+                        @case ('RFF') {
+                          RFF — Racimo Fruto Fresco
+                        }
+
+                        @case ('FS') {
+                          FS — Fruto Fresco
+                        }
+
+                        @case ('TORTA_CLARIFICACION') {
+                          Torta de clarificación
+                        }
+
+                        @case ('LODO_BIOGAS') {
+                          Lodo de biogás
+                        }
+
+                        @case ('RESIDUOS_VARIOS') {
+                          Residuos varios
+                        }
+
+                        @default {
+                          {{ servicio.productoTransportado.replaceAll('_', ' ') }}
+                        }
+                      }
+
+                      @if (servicio.descripcionResiduos) {
+                        <small>
+                          {{ servicio.descripcionResiduos }}
+                        </small>
+                      }
+                    </small>
+                  </td>
+                  <td class="service-execution">
+                    <span
+                      ><small>Salida</small>
+                      @if (servicio.fechaHoraSalidaReal; as salidaReal) {
+                        {{ salidaReal.slice(0, 16).replace('T', ' ') }}
+                      } @else {
+                        —
+                      }</span
+                    ><span
+                      ><small>Regreso</small>
+                      @if (servicio.fechaHoraLlegadaReal; as llegadaReal) {
+                        {{ llegadaReal.slice(0, 16).replace('T', ' ') }}
+                      } @else {
+                        —
+                      }</span
+                    ><span class="list-duration"
+                      >Duración:
+                      {{ calcularDuracion(servicio) }}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      class="status"
+                      [class.breakdown]="servicio.detenidoPorAveria"
+                      [class.programmed]="servicio.estado === 'PROGRAMADO'"
+                      [class.in-progress]="servicio.estado === 'EN_CURSO'"
+                      [class.completed]="servicio.estado === 'COMPLETADO'"
+                      [class.cancelled]="servicio.estado === 'CANCELADO'"
+                    >
+                      {{
+                        servicio.detenidoPorAveria
+                          ? 'DETENIDO POR AVERÍA'
+                          : servicio.estado.replaceAll('_', ' ')
+                      }}
+                    </span>
+                    @if (servicio.estado === 'COMPLETADO') {
+                      <small class="validation-label">{{ estadoValidacion(servicio.id) }}</small>
+                    }
+                  </td>
+                  <td>
+                    <div class="action-group">
+                      @if (servicio.estado === 'PROGRAMADO') {
+                        @if (!servicio.tramos?.length && !servicio.detenidoPorAveria) {
+                          <button
+                            type="button"
+                            class="action-button"
+                            [disabled]="procesandoId() !== null"
+                            (click)="cambiarEstado(servicio, 'EN_CURSO')"
+                          >
+                            @if (procesandoId() === servicio.id) {
+                              Procesando...
+                            } @else {
+                              Iniciar con carga
+                            }
+                          </button>
+                        }
+
+                        <button
+                          type="button"
+                          class="action-button danger"
+                          [disabled]="procesandoId() !== null"
+                          (click)="cambiarEstado(servicio, 'CANCELADO')"
+                        >
+                          Anular programación
+                        </button>
+                      } @else if (servicio.estado === 'EN_CURSO') {
+                        @if (!servicio.tramos?.length && !servicio.detenidoPorAveria) {
+                          <button
+                            type="button"
+                            class="action-button"
+                            [disabled]="procesandoId() !== null"
+                            (click)="cambiarEstado(servicio, 'COMPLETADO')"
+                          >
+                            @if (procesandoId() === servicio.id) {
+                              Procesando...
+                            } @else {
+                              Llegué a planta
+                            }
+                          </button>
+                        }
+                      }
+
+                      <button
+                        type="button"
+                        class="action-button view"
+                        (click)="abrirDetalle(servicio)"
+                      >
+                        {{ servicio.detenidoPorAveria ? 'Atender avería' : 'Visualizar' }}
+                      </button>
+                      <button
+                        type="button"
+                        class="action-button evidence"
+                        (click)="abrirEvidencias(servicio)"
+                      >
+                        Evidencias
+                      </button>
+
+                      @if (servicio.estado === 'COMPLETADO') {
+                        <button
+                          type="button"
+                          class="action-button survey"
+                          (click)="abrirEncuesta(servicio)"
+                        >
+                          Evaluación
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+              @if (!serviciosFiltrados().length) {
+                <tr>
+                  <td colspan="6" class="service-no-results">
+                    No hay servicios que coincidan con la búsqueda o el estado seleccionado.<button
+                      type="button"
+                      class="service-refresh"
+                      (click)="busqueda.set(''); filtroEstado.set('TODOS')"
+                    >
+                      Limpiar filtros
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  </main>
+</div>
+
+@if (mostrarEvidencias() && servicioSeleccionado(); as servicio) {
+  <div class="evidence-overlay" role="presentation" (click)="cerrarEvidencias()">
+    <section
+      class="evidence-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="evidence-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="evidence-header">
+        <div>
+          <small>{{ servicio.codigo }}</small>
+
+          <h2 id="evidence-title">Evidencias digitales</h2>
+
+          <p>
+            {{ servicio.vehiculo.placa }}
+            ·
+            {{
+              servicio.ruta?.nombre ||
+                servicio.origenDescripcion + ' → ' + servicio.destinoDescripcion
+            }}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="modal-close"
+          aria-label="Cerrar"
+          [disabled]="guardandoEvidencia()"
+          (click)="cerrarEvidencias()"
+        >
+          ×
+        </button>
+      </header>
+
+      <div class="evidence-content">
+        @if (servicio.estado === 'EN_CURSO') {
+          <form
+            class="evidence-form"
+            [formGroup]="formularioEvidencia"
+            (ngSubmit)="registrarEvidencia()"
+          >
+            <div class="form-heading">
+              <div>
+                <small>Nueva evidencia</small>
+                <h3>Adjuntar archivo</h3>
+              </div>
+
+              <span>Máximo 10 MB</span>
+            </div>
+
+            <div class="evidence-form-grid">
+              <label>
+                <span>Tipo de evidencia</span>
+
+                <select formControlName="tipo">
+                  <option value="FOTO_INICIO">Fotografía de inicio</option>
+
+                  <option value="FOTO_CARGA">Fotografía de carga</option>
+
+                  <option value="FOTO_ENTREGA">Fotografía de entrega</option>
+
+                  <option value="DOCUMENTO">Documento</option>
+                </select>
+              </label>
+
+              <label class="file-field">
+                <span>Fotografía o documento</span>
+
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp,.pdf"
+                  (change)="seleccionarArchivo($event)"
+                />
+
+                <span class="file-display">
+                  @if (nombreArchivo()) {
+                    {{ nombreArchivo() }}
+                  } @else {
+                    Seleccionar archivo
+                  }
+                </span>
+              </label>
+
+              <label class="full-width">
+                <span>Descripción</span>
+
+                <textarea
+                  formControlName="descripcion"
+                  rows="3"
+                  maxlength="500"
+                  placeholder="Describe la evidencia registrada"
+                ></textarea>
+              </label>
+            </div>
+
+            <div class="location-section">
+              <div class="location-heading">
+                <div>
+                  <strong>Ubicación GPS</strong>
+
+                  <small> Opcional para fotografías y documentos </small>
+                </div>
+
+                <button
+                  type="button"
+                  class="location-button"
+                  [disabled]="obteniendoUbicacion()"
+                  (click)="obtenerUbicacionActual()"
+                >
+                  {{ obteniendoUbicacion() ? 'Obteniendo...' : 'Usar ubicación actual' }}
+                </button>
+              </div>
+
+              @if (
+                formularioEvidencia.controls.latitud.value !== null &&
+                formularioEvidencia.controls.longitud.value !== null
+              ) {
+                <div class="location-result">
+                  <div>
+                    <small>Latitud</small>
+
+                    <strong>
+                      {{ formularioEvidencia.controls.latitud.value }}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <small>Longitud</small>
+
+                    <strong>
+                      {{ formularioEvidencia.controls.longitud.value }}
+                    </strong>
+                  </div>
+
+                  <button type="button" (click)="quitarUbicacion()">Quitar</button>
+                </div>
+              }
+            </div>
+
+            @if (mostrarCamposConformidad()) {
+              <div class="conformity-section">
+                <div class="section-description">
+                  <strong>Datos de conformidad</strong>
+
+                  <small> Identifica a la persona que confirma la atención del servicio. </small>
+                </div>
+
+                <div class="evidence-form-grid">
+                  <label>
+                    <span>Nombre del responsable</span>
+
+                    <input
+                      type="text"
+                      formControlName="nombreResponsable"
+                      maxlength="150"
+                      placeholder="Nombres y apellidos"
+                    />
+                  </label>
+
+                  <label>
+                    <span>Documento</span>
+
+                    <input
+                      type="text"
+                      formControlName="documentoResponsable"
+                      maxlength="30"
+                      placeholder="DNI o documento"
+                    />
+                  </label>
+                </div>
+              </div>
+            }
+
+            @if (mensajeEvidencia()) {
+              <div class="evidence-message">
+                {{ mensajeEvidencia() }}
+              </div>
+            }
+
+            <div class="evidence-form-actions">
+              <button
+                type="button"
+                class="secondary-button"
+                [disabled]="guardandoEvidencia()"
+                (click)="cerrarEvidencias()"
+              >
+                Cancelar
+              </button>
+
+              <button type="submit" class="primary-button" [disabled]="guardandoEvidencia()">
+                {{ guardandoEvidencia() ? 'Guardando...' : 'Registrar evidencia' }}
+              </button>
+            </div>
+          </form>
+        } @else {
+          <div class="evidence-readonly">
+            <h3>
+              {{
+                servicio.estado === 'PROGRAMADO' ? 'Viaje pendiente de inicio' : 'Registro cerrado'
+              }}
+            </h3>
+            <p>Las evidencias solo se pueden registrar mientras el viaje está en curso.</p>
+            <span>Puedes consultar aquí las fotografías y documentos ya registrados.</span>
+          </div>
+        }
+
+        <section class="evidence-history">
+          <div class="history-heading">
+            <div>
+              <small>Trazabilidad</small>
+              <h3>Evidencias registradas</h3>
+            </div>
+
+            <span>
+              {{ evidencias().length }}
+              archivo(s)
+            </span>
+          </div>
+
+          @if (cargandoEvidencias()) {
+            <div class="evidence-empty">Cargando evidencias...</div>
+          } @else if (evidencias().length === 0) {
+            <div class="evidence-empty">
+              <strong> Aún no existen evidencias </strong>
+
+              <p>Las fotografías, documentos y conformidades aparecerán aquí.</p>
+            </div>
+          } @else {
+            <div class="evidence-list">
+              @for (evidencia of evidencias(); track evidencia.id) {
+                <article class="evidence-item">
+                  <div
+                    class="evidence-type-icon"
+                    [class.document]="evidencia.tipo === 'DOCUMENTO'"
+                    [class.conformity]="evidencia.tipo === 'CONFORMIDAD'"
+                  >
+                    @if (evidencia.tipo === 'DOCUMENTO') {
+                      PDF
+                    } @else if (evidencia.tipo === 'CONFORMIDAD') {
+                      ✓
+                    } @else {
+                      IMG
+                    }
+                  </div>
+
+                  <div class="evidence-information">
+                    <div class="evidence-item-heading">
+                      <div>
+                        <strong>
+                          {{ etiquetaTipoEvidencia(evidencia.tipo) }}
+                        </strong>
+
+                        <span>
+                          {{ evidencia.nombreOriginal }}
+                        </span>
+                      </div>
+
+                      <button type="button" (click)="abrirArchivo(evidencia)">Ver archivo</button>
+                    </div>
+
+                    @if (evidencia.descripcion) {
+                      <p>
+                        {{ evidencia.descripcion }}
+                      </p>
+                    }
+
+                    @if (evidencia.nombreResponsable) {
+                      <div class="conformity-data">
+                        <span>
+                          Responsable:
+                          <strong>
+                            {{ evidencia.nombreResponsable }}
+                          </strong>
+                        </span>
+
+                        <span>
+                          Documento:
+                          <strong>
+                            {{ evidencia.documentoResponsable }}
+                          </strong>
+                        </span>
+                      </div>
+                    }
+
+                    @if (evidencia.latitud !== null && evidencia.longitud !== null) {
+                      <span class="coordinates">
+                        GPS:
+                        {{ evidencia.latitud }},
+                        {{ evidencia.longitud }}
+                      </span>
+                    }
+
+                    <footer>
+                      <span>
+                        Registrado por
+                        {{ evidencia.registradoPor }}
+                      </span>
+
+                      <span>
+                        {{ formatearFecha(evidencia.fechaRegistro) }}
+                      </span>
+
+                      <span>
+                        {{ formatearTamano(evidencia.tamanoBytes) }}
+                      </span>
+                    </footer>
+                  </div>
+                </article>
+              }
+            </div>
+          }
+        </section>
+      </div>
+    </section>
+  </div>
+}
+
+@if (mostrarEncuesta() && servicioEncuesta(); as servicio) {
+  <div class="survey-overlay" role="presentation" (click)="cerrarEncuesta()">
+    <section
+      class="survey-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="survey-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="survey-header">
+        <div>
+          <small>{{ servicio.codigo }}</small>
+
+          <h2 id="survey-title">Evaluación del servicio</h2>
+
+          <p>
+            {{ servicio.vehiculo.placa }} ·
+            {{
+              servicio.ruta?.nombre ||
+                servicio.origenDescripcion + ' → ' + servicio.destinoDescripcion
+            }}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="survey-close"
+          aria-label="Cerrar evaluación"
+          [disabled]="guardandoEncuesta()"
+          (click)="cerrarEncuesta()"
+        >
+          ×
+        </button>
+      </header>
+
+      @if (cargandoEncuesta()) {
+        <div class="survey-loading">
+          <span class="survey-loader"></span>
+          <p>Consultando evaluación...</p>
+        </div>
+      } @else if (encuestaActual(); as encuesta) {
+        <div class="survey-result">
+          <div class="survey-score">
+            <small>Promedio general</small>
+            <strong>{{ encuesta.promedio }}</strong>
+            <span>/ 5</span>
+          </div>
+
+          <div class="survey-result-grid">
+            <div>
+              <small>Puntualidad</small>
+              <strong>{{ encuesta.puntualidad }} / 5</strong>
+              <span>
+                {{ textoCalificacion(encuesta.puntualidad) }}
+              </span>
+            </div>
+
+            <div>
+              <small>Cumplimiento</small>
+              <strong>{{ encuesta.cumplimiento }} / 5</strong>
+              <span>
+                {{ textoCalificacion(encuesta.cumplimiento) }}
+              </span>
+            </div>
+
+            <div>
+              <small>Atención recibida</small>
+              <strong>{{ encuesta.atencion }} / 5</strong>
+              <span>
+                {{ textoCalificacion(encuesta.atencion) }}
+              </span>
+            </div>
+
+            <div>
+              <small>Satisfacción general</small>
+              <strong> {{ encuesta.satisfaccionGeneral }} / 5 </strong>
+              <span>
+                {{ textoCalificacion(encuesta.satisfaccionGeneral) }}
+              </span>
+            </div>
+          </div>
+
+          @if (encuesta.comentarios) {
+            <div class="survey-comments">
+              <small>Comentarios</small>
+              <p>{{ encuesta.comentarios }}</p>
+            </div>
+          }
+
+          <footer class="survey-metadata">
+            <span> Evaluado por {{ encuesta.evaluadorNombre }} </span>
+
+            <span>
+              {{ formatearFecha(encuesta.fechaRegistro) }}
+            </span>
+          </footer>
+
+          @if (mensajeEncuesta()) {
+            <div class="survey-message success">
+              {{ mensajeEncuesta() }}
+            </div>
+          }
+
+          <button type="button" class="survey-secondary-button" (click)="cerrarEncuesta()">
+            Cerrar
+          </button>
+        </div>
+      } @else {
+        <form class="survey-form" [formGroup]="formularioEncuesta" (ngSubmit)="registrarEncuesta()">
+          <div class="survey-introduction">
+            <strong>¿Cómo fue la atención recibida?</strong>
+            <p>
+              Califica cada criterio del 1 al 5. Esta información será utilizada para mejorar el
+              servicio de transporte.
+            </p>
+          </div>
+
+          <fieldset class="survey-fieldset">
+            <legend>Puntualidad</legend>
+            <div class="rating-options">
+              <label
+                ><input type="radio" formControlName="puntualidad" [value]="1" /><span
+                  >1</span
+                ></label
+              >
+              <label
+                ><input type="radio" formControlName="puntualidad" [value]="2" /><span
+                  >2</span
+                ></label
+              >
+              <label
+                ><input type="radio" formControlName="puntualidad" [value]="3" /><span
+                  >3</span
+                ></label
+              >
+              <label
+                ><input type="radio" formControlName="puntualidad" [value]="4" /><span
+                  >4</span
+                ></label
+              >
+              <label
+                ><input type="radio" formControlName="puntualidad" [value]="5" /><span
+                  >5</span
+                ></label
+              >
+            </div>
+            <small>
+              {{ textoCalificacion(formularioEncuesta.controls.puntualidad.value) }}
+            </small>
+          </fieldset>
+
+          <fieldset class="survey-fieldset">
+            <legend>Cumplimiento del servicio</legend>
+            <div class="rating-options">
+              <label
+                ><input type="radio" formControlName="cumplimiento" [value]="1" /><span
+                  >1</span
+                ></label
+              >
+              <label
+                ><input type="radio" formControlName="cumplimiento" [value]="2" /><span
+                  >2</span
+                ></label
+              >
+              <label
+                ><input type="radio" formControlName="cumplimiento" [value]="3" /><span
+                  >3</span
+                ></label
+              >
+              <label
+                ><input type="radio" formControlName="cumplimiento" [value]="4" /><span
+                  >4</span
+                ></label
+              >
+              <label
+                ><input type="radio" formControlName="cumplimiento" [value]="5" /><span
+                  >5</span
+                ></label
+              >
+            </div>
+            <small>
+              {{ textoCalificacion(formularioEncuesta.controls.cumplimiento.value) }}
+            </small>
+          </fieldset>
+
+          <fieldset class="survey-fieldset">
+            <legend>Atención recibida</legend>
+            <div class="rating-options">
+              <label
+                ><input type="radio" formControlName="atencion" [value]="1" /><span>1</span></label
+              >
+              <label
+                ><input type="radio" formControlName="atencion" [value]="2" /><span>2</span></label
+              >
+              <label
+                ><input type="radio" formControlName="atencion" [value]="3" /><span>3</span></label
+              >
+              <label
+                ><input type="radio" formControlName="atencion" [value]="4" /><span>4</span></label
+              >
+              <label
+                ><input type="radio" formControlName="atencion" [value]="5" /><span>5</span></label
+              >
+            </div>
+            <small>
+              {{ textoCalificacion(formularioEncuesta.controls.atencion.value) }}
+            </small>
+          </fieldset>
+
+          <fieldset class="survey-fieldset">
+            <legend>Satisfacción general</legend>
+            <div class="rating-options">
+              <label
+                ><input type="radio" formControlName="satisfaccionGeneral" [value]="1" /><span
+                  >1</span
+                ></label
+              >
+              <label
+                ><input type="radio" formControlName="satisfaccionGeneral" [value]="2" /><span
+                  >2</span
+                ></label
+              >
+              <label
+                ><input type="radio" formControlName="satisfaccionGeneral" [value]="3" /><span
+                  >3</span
+                ></label
+              >
+              <label
+                ><input type="radio" formControlName="satisfaccionGeneral" [value]="4" /><span
+                  >4</span
+                ></label
+              >
+              <label
+                ><input type="radio" formControlName="satisfaccionGeneral" [value]="5" /><span
+                  >5</span
+                ></label
+              >
+            </div>
+            <small>
+              {{ textoCalificacion(formularioEncuesta.controls.satisfaccionGeneral.value) }}
+            </small>
+          </fieldset>
+
+          <label class="survey-comment-field">
+            <span>Comentarios (opcional)</span>
+
+            <textarea
+              formControlName="comentarios"
+              rows="4"
+              maxlength="1000"
+              placeholder="Cuéntanos qué salió bien o qué podemos mejorar"
+            ></textarea>
+
+            <small> {{ formularioEncuesta.controls.comentarios.value.length }} / 1000 </small>
+          </label>
+
+          @if (mensajeEncuesta()) {
+            <div class="survey-message error">
+              {{ mensajeEncuesta() }}
+            </div>
+          }
+
+          <div class="survey-actions">
+            <button
+              type="button"
+              class="survey-secondary-button"
+              [disabled]="guardandoEncuesta()"
+              (click)="cerrarEncuesta()"
+            >
+              Cancelar
+            </button>
+
+            <button type="submit" class="survey-primary-button" [disabled]="guardandoEncuesta()">
+              {{ guardandoEncuesta() ? 'Registrando...' : 'Registrar evaluación' }}
+            </button>
+          </div>
+        </form>
+      }
+    </section>
+  </div>
+}
+
+@if (detalleServicio(); as detalle) {
+  <div class="service-detail-backdrop" (keydown.escape)="cerrarDetalle()">
+    <section
+      class="service-detail-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="detalle-servicio-titulo"
+    >
+      <header class="service-detail-heading">
+        <div>
+          <small>Consulta de operaciones · {{ detalle.codigo }}</small>
+          <h2 id="detalle-servicio-titulo">Detalle del servicio</h2>
+          <p>Recorrido y avance según las marcaciones recibidas del chofer.</p>
+        </div>
+        <button
+          id="cerrar-detalle-servicio"
+          type="button"
+          class="detail-close"
+          aria-label="Cerrar detalle"
+          (click)="cerrarDetalle()"
+        >
+          ×
+        </button>
+      </header>
+      <div class="detail-status">
+        <strong>{{
+          detalle.detenidoPorAveria ? 'DETENIDO POR AVERÍA' : detalle.estado.replace('_', ' ')
+        }}</strong
+        ><span>{{ avisoActualizacion() }}</span>
+      </div>
+      @if (mensajeError()) {
+        <p class="detail-error" role="alert">{{ mensajeError() }}</p>
+      }
+      <app-incidencia-viaje [servicio]="detalle" (actualizado)="actualizarIncidencia($event)" />
+      <div class="detail-facts">
+        <div>
+          <small>Camión</small><strong>{{ detalle.vehiculo.placa }}</strong>
+        </div>
+        <div>
+          <small>Chofer</small><strong>{{ detalle.conductor.nombres }}</strong>
+        </div>
+        <div>
+          <small>Carga principal</small><strong>{{ detalle.productoTransportado }}</strong>
+        </div>
+        <div>
+          <small>Salida prevista</small
+          ><strong>{{
+            detalle.fechaHoraSalida?.replace('T', ' ')?.slice(0, 16) || 'No registrada'
+          }}</strong>
+        </div>
+        <div>
+          <small>Salida real</small
+          ><strong>{{
+            detalle.fechaHoraSalidaReal?.replace('T', ' ')?.slice(0, 16) || 'Pendiente'
+          }}</strong>
+        </div>
+        <div>
+          <small>Llegada final</small
+          ><strong>{{
+            detalle.fechaHoraLlegadaReal?.replace('T', ' ')?.slice(0, 16) || 'Pendiente'
+          }}</strong>
+        </div>
+        <div>
+          <small>Recorrido</small
+          ><strong>{{ detalle.origenDescripcion }} → {{ detalle.destinoDescripcion }}</strong>
+        </div>
+      </div>
+      @if (detalle.estado === 'COMPLETADO') {
+        <section class="operational-validation" aria-labelledby="validacion-titulo">
+          <h3 id="validacion-titulo">Validación operativa · {{ estadoValidacion(detalle.id) }}</h3>
+          <p>
+            El recorrido ya finalizó. Esta revisión no cambia sus marcaciones ni vuelve a ocupar la
+            unidad o el chofer.
+          </p>
+          @if (errorValidacion()) {
+            <p role="alert">{{ errorValidacion() }}</p>
+          }
+          @if (cargandoValidaciones()) {
+            <p role="status">Consultando validaciones…</p>
+          }
+          @if (puedeValidar()) {
+            <label for="motivo-validacion">Comentario (obligatorio si observas el viaje)</label>
+            <textarea
+              id="motivo-validacion"
+              rows="3"
+              maxlength="1000"
+              [value]="comentarioValidacion()"
+              (input)="comentarioValidacion.set($any($event.target).value)"
+            ></textarea>
+            <div class="validation-buttons">
+              <button
+                type="button"
+                [disabled]="guardandoValidacion() || cargandoValidaciones() || !!errorValidacion()"
+                (click)="validarViaje(detalle, 'VALIDADO')"
+              >
+                Validar viaje
+              </button>
+              <button
+                type="button"
+                [disabled]="
+                  guardandoValidacion() ||
+                  cargandoValidaciones() ||
+                  !!errorValidacion() ||
+                  !comentarioValidacion().trim()
+                "
+                (click)="validarViaje(detalle, 'OBSERVADO')"
+              >
+                Observar viaje
+              </button>
+            </div>
+          }
+          @for (registro of historialValidacion(detalle.id); track registro.id) {
+            <article>
+              <strong>{{ registro.estado === 'VALIDADO' ? 'Validado' : 'Observado' }}</strong>
+              <span
+                >{{ registro.responsable }} ·
+                {{ registro.fecha.replace('T', ' ').slice(0, 16) }}</span
+              >
+              @if (registro.comentario) {
+                <p>{{ registro.comentario }}</p>
+              }
+            </article>
+          }
+        </section>
+      }
+      @if (detalle.tramos?.length) {
+        <app-avance-viaje [servicio]="detalle" />
+      } @else {
+        <div class="legacy-service">
+          Servicio anterior sin seguimiento por paradas. Consulta sus fechas y estado registrados.
+        </div>
+      }
+      @if (detalle.observaciones) {
+        <section class="detail-notes">
+          <h3>Observaciones</h3>
+          <p>{{ detalle.observaciones }}</p>
+        </section>
+      }
+      <footer class="service-detail-actions">
+        <button
+          type="button"
+          class="action-button evidence"
+          (click)="cerrarDetalle(); abrirEvidencias(detalle)"
+        >
+          Evidencias
+        </button>
+        @if (detalle.estado === 'COMPLETADO') {
+          <button
+            type="button"
+            class="action-button survey"
+            (click)="cerrarDetalle(); abrirEncuesta(detalle)"
+          >
+            Evaluación
+          </button>
+        }
+        <button
+          type="button"
+          class="detail-secondary"
+          [disabled]="cargando()"
+          (click)="cargarServicios()"
+        >
+          {{ cargando() ? 'Actualizando...' : 'Actualizar' }}</button
+        ><button type="button" class="detail-primary" (click)="cerrarDetalle()">
+          Cerrar detalle
+        </button>
+      </footer>
+    </section>
+  </div>
+}

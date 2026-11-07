@@ -1,0 +1,193 @@
+<main class="login-page" [class.acceso-correcto]="accesoCorrecto()">
+  <div class="landscape" aria-hidden="true"></div>
+  <div class="landscape-shade" aria-hidden="true"></div>
+
+  <header class="page-header">
+    <div class="brand-signature">
+      <img src="assets/branding/logopalmas.png" alt="Palmas" width="124" height="54" />
+    </div>
+  </header>
+
+  <section class="login-stage" aria-labelledby="login-title">
+    <div class="login-card">
+      <header class="login-header">
+        <h1 id="login-title">Gestión de<br /><span>transporte.</span></h1>
+        <p>Ingresa con tu cuenta para continuar.</p>
+      </header>
+
+      <form [formGroup]="loginForm" (ngSubmit)="iniciarSesion()" [attr.aria-busy]="cargando()">
+        <div class="form-field">
+          <label for="identificador">Correo corporativo o DNI</label>
+          <div class="input-wrapper">
+            <svg
+              class="input-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+            >
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <circle cx="8" cy="10" r="2" />
+              <path d="M5 16c0-3 6-3 6 0m3-6h4m-4 4h4" />
+            </svg>
+            <input
+              id="identificador"
+              type="text"
+              formControlName="identificador"
+              placeholder="Correo @palmas.com.pe o DNI"
+              autocomplete="username"
+              maxlength="150"
+              autocapitalize="none"
+              spellcheck="false"
+              [readOnly]="cargando()"
+              [attr.aria-invalid]="
+                loginForm.controls.identificador.touched && loginForm.controls.identificador.invalid
+              "
+              [attr.aria-describedby]="
+                loginForm.controls.identificador.touched && loginForm.controls.identificador.invalid
+                  ? 'identificador-error'
+                  : null
+              "
+            />
+          </div>
+          @if (
+            loginForm.controls.identificador.touched && loginForm.controls.identificador.invalid
+          ) {
+            <small class="field-error" id="identificador-error"
+              >Ingresa un correo @palmas.com.pe o un DNI de 8 dígitos.</small
+            >
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="contrasena">Contraseña</label>
+          <div class="input-wrapper">
+            <svg
+              class="input-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+            >
+              <rect x="5" y="10" width="14" height="11" rx="2" />
+              <path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v3" />
+            </svg>
+            <input
+              id="contrasena"
+              [type]="mostrarContrasena() ? 'text' : 'password'"
+              formControlName="contrasena"
+              placeholder="Tu contraseña"
+              autocomplete="current-password"
+              [readOnly]="cargando()"
+              [attr.aria-invalid]="
+                loginForm.controls.contrasena.touched && loginForm.controls.contrasena.invalid
+              "
+              [attr.aria-describedby]="
+                loginForm.controls.contrasena.touched && loginForm.controls.contrasena.invalid
+                  ? 'contrasena-error'
+                  : null
+              "
+            />
+            <button
+              class="password-toggle"
+              type="button"
+              [attr.aria-label]="mostrarContrasena() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              [attr.aria-pressed]="mostrarContrasena()"
+              (click)="mostrarContrasena.set(!mostrarContrasena())"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                aria-hidden="true"
+              >
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+                <circle cx="12" cy="12" r="3" />
+                @if (mostrarContrasena()) {
+                  <path d="M3 3l18 18" />
+                }
+              </svg>
+            </button>
+          </div>
+          @if (loginForm.controls.contrasena.touched && loginForm.controls.contrasena.invalid) {
+            <small class="field-error" id="contrasena-error">La contraseña es obligatoria.</small>
+          }
+        </div>
+
+        @if (mensaje()) {
+          <div class="message" role="alert" [class.error]="esError()" [class.success]="!esError()">
+            {{ mensaje() }}
+          </div>
+        }
+
+        <button class="submit-button" type="submit" [disabled]="cargando()">
+          @if (accesoCorrecto()) {
+            <svg
+              class="access-check"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path d="m5 12 4 4L19 6" /></svg
+            ><span role="status">Acceso correcto</span>
+          } @else if (cargando()) {
+            <span class="button-loader" aria-hidden="true"></span><span>Validando acceso…</span>
+          } @else {
+            <span>Iniciar sesión</span
+            ><svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              aria-hidden="true"
+            >
+              <path d="M4 12h15m-6-6 6 6-6 6" />
+            </svg>
+          }
+        </button>
+      </form>
+
+      <footer class="card-footer">
+        @if (accesoOffline.automaticoDisponible()) {
+          <button type="button" [disabled]="cargando()" (click)="abrirViajeGuardado()">
+            Continuar con mi viaje sin conexión
+          </button>
+          <small>Solo en este dispositivo. No renueva tu sesión del servidor.</small>
+        }
+        @if (accesoOffline.anteriorDisponible()) {
+          <label for="frase-local">Frase de acceso local del chofer</label>
+          <input
+            id="frase-local"
+            type="password"
+            autocomplete="off"
+            [value]="fraseLocal()"
+            (input)="fraseLocal.set($any($event.target).value)"
+          />
+          <button type="button" [disabled]="cargando()" (click)="desbloquearLocal()">
+            Abrir viaje descargado sin conexión
+          </button>
+          <p>
+            Este acceso solo abre los datos guardados del dispositivo. Para sincronizar debes
+            iniciar sesión en la red corporativa.
+          </p>
+        }
+        <span>¿Necesitas recuperar tu acceso?</span>
+        <p>Utiliza nuestros canales digitales</p>
+      </footer>
+    </div>
+  </section>
+
+  <footer class="page-footer">
+    <div class="landscape-caption">
+      <span class="caption-rule"></span>
+      <div>
+        <strong>Del campo a cada destino.</strong><span>Gestión de Transporte · Grupo Palmas</span>
+      </div>
+    </div>
+  </footer>
+</main>
